@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orthodontic Clinic Manager (AI)</title>
+    <title>Orthodontic Clinic Manager (Secure)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Markdown for AI Formatting -->
+    <!-- Markdown for AI -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
@@ -20,11 +20,8 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #0d9488; width: 16px; height: 16px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Markdown Styles */
         .prose h3 { font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; color: #0f766e; }
         .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
-        .prose p { margin-bottom: 0.5em; line-height: 1.5; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
@@ -78,7 +75,7 @@
 
         <!-- PATIENT PROFILE VIEW -->
         <section id="view-patient" class="hidden p-4 fade-enter pb-24">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-6 relative overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-20 h-20 bg-teal-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
                 <div class="relative z-10">
                     <div class="flex justify-between items-start mb-2">
@@ -97,10 +94,18 @@
                 </div>
             </div>
 
+            <!-- Treatment Plan Display -->
+            <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-xl mb-6 shadow-sm">
+                <h3 class="text-amber-800 font-bold text-sm uppercase tracking-wide mb-1 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    Treatment Plan
+                </h3>
+                <p id="p-treatment-plan" class="text-slate-700 font-medium text-sm">No plan recorded.</p>
+            </div>
+
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold text-lg text-slate-800">Sessions Log</h3>
                 <div class="flex gap-2">
-                    <!-- AI Analysis Button -->
                     <button onclick="analyzePatientHistory()" class="text-xs font-medium bg-gradient-to-r from-purple-100 to-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full flex items-center gap-1 hover:shadow-sm transition border border-indigo-200">
                         <span id="btn-analyze-icon">✨</span> Analyze
                     </button>
@@ -128,9 +133,7 @@
                     <h3 class="font-bold flex items-center gap-2">✨ Gemini Analysis</h3>
                     <button onclick="document.getElementById('modal-analysis').classList.add('hidden')" class="p-1 hover:bg-white/20 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                 </div>
-                <div id="analysis-content" class="p-5 overflow-y-auto prose prose-sm text-slate-600 leading-relaxed">
-                    <!-- AI Content will appear here -->
-                </div>
+                <div id="analysis-content" class="p-5 overflow-y-auto prose prose-sm text-slate-600 leading-relaxed"></div>
             </div>
         </div>
 
@@ -145,14 +148,36 @@
         </section>
 
         <!-- ADD PATIENT FORM -->
-        <section id="view-add-patient" class="hidden p-4 fade-enter">
+        <section id="view-add-patient" class="hidden p-4 fade-enter pb-20">
             <h2 class="text-xl font-bold text-slate-800 mb-6">Add New Patient</h2>
             <form id="form-add-patient" class="space-y-4">
                 <div class="bg-slate-100 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
                     <span class="text-sm text-slate-500">Auto Serial ID</span>
                     <span id="new-serial-id" class="font-mono font-bold text-slate-700 text-lg">Loading...</span>
                 </div>
-                <div><label class="block text-sm font-medium mb-1">Full Name</label><input type="text" id="inp-name" required class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></div>
+
+                <!-- 3 Name Fields -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="col-span-1">
+                        <label class="block text-xs font-medium mb-1 text-slate-600">First Name</label>
+                        <input type="text" id="inp-name-1" required class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border text-sm" placeholder="First">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-xs font-medium mb-1 text-slate-600">Middle Name</label>
+                        <input type="text" id="inp-name-2" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border text-sm" placeholder="Middle">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-xs font-medium mb-1 text-slate-600">Last Name</label>
+                        <input type="text" id="inp-name-3" required class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border text-sm" placeholder="Last">
+                    </div>
+                </div>
+
+                <!-- NEW: Treatment Plan Field -->
+                <div>
+                    <label class="block text-sm font-medium mb-1 text-slate-700">Treatment Plan (Overview)</label>
+                    <textarea id="inp-treatment-plan" rows="2" placeholder="e.g., Extraction of 4s, U/L Fixed appliances..." class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border focus:ring-2 focus:ring-teal-500"></textarea>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="block text-sm font-medium mb-1">Cast ID</label><input type="text" id="inp-cast" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></div>
                     <div><label class="block text-sm font-medium mb-1">Type</label><select id="inp-type" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border bg-white"><option>New</option><option>Existing</option></select></div>
@@ -172,7 +197,17 @@
 
         <!-- ADD SESSION FORM -->
         <section id="view-add-session" class="hidden p-4 fade-enter">
-            <h2 class="text-xl font-bold text-slate-800 mb-6">Log New Session</h2>
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Log New Session</h2>
+            
+            <!-- NEW: Patient Banner in Add Session -->
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6 flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-indigo-500 font-bold uppercase tracking-wider">Current Patient</p>
+                    <h3 id="session-patient-name" class="text-lg font-bold text-indigo-900">--</h3>
+                </div>
+                <div class="bg-white px-3 py-1 rounded-lg text-sm font-mono text-indigo-600 shadow-sm border border-indigo-100" id="session-patient-id">#---</div>
+            </div>
+
             <form id="form-add-session" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">Date</label>
@@ -224,7 +259,8 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 
-        // --- CONFIGURATION ---
+        // --- CONFIG ---
+        // FIXED: YOUR FIREBASE CONFIG RESTORED HERE
         const firebaseConfig = {
             apiKey: "AIzaSyAgt_5aFkY3gXNXFp9NnonUiPsnH7O9l-g",
             authDomain: "myclinicapp-835ea.firebaseapp.com",
@@ -235,9 +271,9 @@
             measurementId: "G-V6DCB3XBF5"
         };
 
-        // 🔑 PASTE YOUR GEMINI API KEY HERE
-        const geminiApiKey = "AIzaSyDANf3xfyLHqmmB4MwKxeUAKy81C1AVPFE"; 
-        // --------------------------------
+        // 2. PASTE GEMINI API KEY HERE (If you have one)
+        const geminiApiKey = ""; 
+        // --------------
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -269,9 +305,9 @@
             }
         });
 
-        // --- GEMINI AI API ---
+        // --- GEMINI ---
         async function callGemini(prompt) {
-            if(!geminiApiKey) { alert("Please add your Gemini API Key in the code."); return null; }
+            if(!geminiApiKey) { alert("Please add Gemini API Key"); return null; }
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
             try {
                 const response = await fetch(url, {
@@ -284,115 +320,68 @@
             } catch (error) { console.error("AI Error:", error); return null; }
         }
 
-        // --- NEW: AI History Analysis ---
+        // --- AI ANALYSIS ---
         window.analyzePatientHistory = async () => {
             if(!currentPatientId) return;
-            
-            // 1. Show Modal & Loading
             const modal = document.getElementById('modal-analysis');
             const content = document.getElementById('analysis-content');
             modal.classList.remove('hidden');
             content.innerHTML = `<div class="text-center py-10"><div class="loader mx-auto mb-2"></div><p class="text-slate-500">Reading patient history...</p></div>`;
 
-            // 2. Fetch last 10 sessions
             try {
                 const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', currentPatientId, 'sessions'), orderBy('date', 'asc'));
                 const snap = await getDocs(q);
                 
-                if(snap.empty) {
-                    content.innerHTML = `<p class="text-center text-slate-500">No sessions found to analyze.</p>`;
-                    return;
-                }
+                if(snap.empty) { content.innerHTML = `<p class="text-center text-slate-500">No sessions found.</p>`; return; }
 
-                // 3. Build Context String
-                let historyText = `Patient: ${currentPatient.name} (${currentPatient.type})\nTreatment Start: ${currentPatient.startDate}\n\nSESSION LOG:\n`;
-                snap.forEach(doc => {
-                    const s = doc.data();
-                    historyText += `- Date: ${s.date}, Procedure: ${s.procedure}, Next Plan: ${s.nextPlan}\n`;
-                });
+                let historyText = `Patient: ${currentPatient.name} (${currentPatient.type})\nTreatment Plan: ${currentPatient.treatmentPlan}\n\nLOG:\n`;
+                snap.forEach(doc => { const s = doc.data(); historyText += `- ${s.date}: ${s.procedure} (Plan: ${s.nextPlan})\n`; });
 
-                // 4. Prompt Engineering
-                const prompt = `As an expert orthodontist assistant, analyze this patient history:\n\n${historyText}\n\nProvide a concise clinical summary in Markdown format. Include: 1) Brief summary of progress. 2) Any recurring procedures or concerns. 3) Suggest focus for next 3 visits. Keep it professional.`;
-
-                // 5. Call API
+                const prompt = `As an expert orthodontist, analyze this patient history:\n\n${historyText}\n\nProvide a concise markdown summary: Progress status, concerns, and next steps.`;
                 const result = await callGemini(prompt);
                 
-                // 6. Render
-                if(result) {
-                    content.innerHTML = marked.parse(result);
-                } else {
-                    content.innerHTML = `<p class="text-red-500">Could not generate analysis. Check API Key.</p>`;
-                }
+                if(result) content.innerHTML = marked.parse(result);
+                else content.innerHTML = `<p class="text-red-500">Error generating analysis.</p>`;
 
-            } catch(err) {
-                console.error(err);
-                content.innerHTML = `<p class="text-red-500">Error fetching data.</p>`;
-            }
+            } catch(err) { console.error(err); content.innerHTML = `<p class="text-red-500">Error.</p>`; }
         };
 
-        // --- AI Suggest Procedures ---
         window.askGeminiProcedures = async () => {
-            const icon = document.getElementById('ai-icon-1'); 
-            const originalText = icon.innerText;
-            icon.innerHTML = '...';
-            
-            const prompt = `List 5 common short orthodontic clinical procedures for a ${currentPatient?.type || 'ortho'} patient. Return ONLY 5 phrases separated by pipes (|). Example: Changed Archwire|Power Chain|IPR`;
+            const prompt = `List 5 short orthodontic procedures for a ${currentPatient?.type} patient. Separated by pipes |.`;
             const res = await callGemini(prompt);
-            
             if(res) {
-                const box = document.getElementById('ai-suggestions'); 
-                box.classList.remove('hidden'); 
-                box.innerHTML = '';
+                const box = document.getElementById('ai-suggestions'); box.classList.remove('hidden'); box.innerHTML = '';
                 res.split('|').forEach(s => { 
                     if(!s.trim()) return; 
                     const b = document.createElement('button'); 
-                    b.className = "px-2 py-1 bg-teal-50 text-teal-700 text-xs rounded border border-teal-100 hover:bg-teal-100 transition"; 
-                    b.type = "button"; 
-                    b.innerText = s.trim(); 
-                    b.onclick = () => { 
-                        const f = document.getElementById('sess-procedure'); 
-                        f.value = f.value ? f.value + ", " + s.trim() : s.trim(); 
-                    }; 
+                    b.className = "px-2 py-1 bg-teal-50 text-teal-700 text-xs rounded border border-teal-100 hover:bg-teal-100"; 
+                    b.type = "button"; b.innerText = s.trim(); 
+                    b.onclick = () => { document.getElementById('sess-procedure').value += (document.getElementById('sess-procedure').value ? ", " : "") + s.trim(); }; 
                     box.appendChild(b); 
                 });
             }
-            icon.innerText = originalText;
         };
 
-        // --- AI Suggest Plan ---
         window.askGeminiPlan = async () => {
             const proc = document.getElementById('sess-procedure').value; 
             if(!proc) return alert('Fill procedure first');
-            const icon = document.getElementById('ai-icon-2'); 
-            icon.innerText = '...';
-            
-            const res = await callGemini(`Based on procedure "${proc}", suggest a concise 3-5 word plan for the next orthodontic visit. Return ONLY the text.`);
+            const res = await callGemini(`Based on procedure "${proc}", suggest a 3-5 word next visit plan.`);
             if(res) document.getElementById('sess-next-plan').value = res.trim(); 
-            icon.innerText = '🤖';
         };
 
-        // --- Image Logic ---
         function resizeImage(file) {
             return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const maxDim = 800; let w = img.width, h = img.height;
+                const reader = new FileReader(); reader.onload = (e) => {
+                    const img = new Image(); img.onload = () => {
+                        const canvas = document.createElement('canvas'); const maxDim = 800; let w = img.width, h = img.height;
                         if(w > h) { if(w > maxDim) { h *= maxDim/w; w = maxDim; } } else { if(h > maxDim) { w *= maxDim/h; h = maxDim; } }
                         canvas.width = w; canvas.height = h;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, w, h);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
+                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h); resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    }; img.src = e.target.result;
+                }; reader.readAsDataURL(file);
             });
         }
 
-        // --- Navigation & Logic ---
         const views = ['view-home', 'view-patient', 'view-gallery', 'view-add-patient', 'view-add-session'];
         window.navTo = (id) => {
             views.forEach(v => document.getElementById(v).classList.add('hidden'));
@@ -400,14 +389,20 @@
             const btnBack = document.getElementById('btnBack');
             if(id === 'view-home') { btnBack.classList.add('hidden'); currentPatient = null; } else btnBack.classList.remove('hidden');
             if(id === 'view-add-patient') generateSerial();
-            if(id === 'view-add-session') resetSessionForm();
+            if(id === 'view-add-session') {
+                resetSessionForm();
+                // Set Patient Name Banner
+                if(currentPatient) {
+                    document.getElementById('session-patient-name').innerText = currentPatient.name;
+                    document.getElementById('session-patient-id').innerText = "#" + currentPatient.serialId;
+                }
+            }
         };
         window.goBack = () => {
             const cur = views.find(v => !document.getElementById(v).classList.contains('hidden'));
             if(cur.includes('add') || cur === 'view-patient') navTo('view-home'); else navTo('view-patient');
         };
 
-        // --- Data ---
         let allPats = [];
         function loadPatients() {
             if(!currentUser) return;
@@ -450,6 +445,10 @@
             document.getElementById('p-date').innerText = p.startDate; document.getElementById('p-photos').innerText = p.totalPhotos || 0;
             const balEl = document.getElementById('p-balance');
             balEl.innerText = p.balance > 0 ? '$'+p.balance : 'Paid'; balEl.className = p.balance > 0 ? 'font-semibold text-red-600' : 'font-semibold text-green-600';
+            
+            // Populate Treatment Plan
+            document.getElementById('p-treatment-plan').innerText = p.treatmentPlan || "No plan recorded.";
+            
             loadMiniSessions(p.id); navTo('view-patient');
         }
 
@@ -473,22 +472,37 @@
             document.getElementById('new-serial-id').innerText = (max + 1).toString().padStart(3, '0');
         }
 
-        // Save Logic
+        // --- ADD PATIENT (Updated) ---
         document.getElementById('btn-submit-patient').addEventListener('click', async (e) => {
             e.preventDefault(); if (!currentUser) return alert("Login first.");
+            
+            // Combine 3 names
+            const n1 = document.getElementById('inp-name-1').value.trim();
+            const n2 = document.getElementById('inp-name-2').value.trim();
+            const n3 = document.getElementById('inp-name-3').value.trim();
+            const fullName = `${n1} ${n2} ${n3}`.replace(/\s+/g, ' ').trim();
+            
+            if(!n1 || !n3) return alert("First and Last Name required.");
+
             const btn = e.target; btn.disabled = true; btn.innerText = 'Saving...';
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients'), {
-                    name: document.getElementById('inp-name').value, serialId: document.getElementById('new-serial-id').innerText,
-                    castId: document.getElementById('inp-cast').value, type: document.getElementById('inp-type').value,
-                    startDate: document.getElementById('inp-date').value, balance: 0, totalPhotos: 0, nextPlan: 'Initial Consultation', createdAt: serverTimestamp()
-                }); document.getElementById('form-add-patient').reset(); navTo('view-home');
+                    name: fullName, 
+                    firstName: n1, middleName: n2, lastName: n3, // Store parts too
+                    serialId: document.getElementById('new-serial-id').innerText,
+                    treatmentPlan: document.getElementById('inp-treatment-plan').value, // NEW
+                    castId: document.getElementById('inp-cast').value, 
+                    type: document.getElementById('inp-type').value,
+                    startDate: document.getElementById('inp-date').value, 
+                    balance: 0, totalPhotos: 0, nextPlan: 'Initial Consultation', createdAt: serverTimestamp()
+                }); 
+                document.getElementById('form-add-patient').reset(); 
+                navTo('view-home');
             } catch(err) { alert('Error'); console.error(err); } btn.disabled = false; btn.innerText = 'Create File';
         });
 
         let sessImg = null;
         function resetSessionForm() { document.getElementById('form-add-session').reset(); document.getElementById('sess-date').valueAsDate = new Date(); sessImg = null; document.getElementById('photo-preview').innerHTML = '<span class="text-slate-300 text-2xl">+</span>'; document.getElementById('ai-suggestions').classList.add('hidden'); }
-        
         window.previewImage = async (inp) => { if(inp.files[0]) { document.getElementById('photo-preview').innerHTML = '<div class="loader"></div>'; sessImg = await resizeImage(inp.files[0]); document.getElementById('photo-preview').innerHTML = `<img src="${sessImg}" class="h-full w-full object-cover">`; } };
 
         document.getElementById('btn-submit-session').addEventListener('click', async (e) => {
