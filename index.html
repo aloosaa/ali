@@ -9,7 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Markdown for AI -->
+    <!-- Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
@@ -102,6 +102,15 @@
                 </h3>
                 <p id="p-treatment-plan" class="text-slate-700 font-medium text-sm">No plan recorded.</p>
             </div>
+            
+            <!-- NEW: Initial Images Preview Section (Optional) -->
+            <div id="p-initial-images" class="hidden mb-6">
+                 <h3 class="font-bold text-sm text-slate-600 mb-2">Initial Records</h3>
+                 <div class="grid grid-cols-2 gap-2">
+                     <div id="preview-xray" class="bg-slate-100 rounded-lg h-24 flex items-center justify-center text-xs text-slate-400 overflow-hidden relative cursor-pointer" onclick="openGallery()">No X-Ray</div>
+                     <div id="preview-photo" class="bg-slate-100 rounded-lg h-24 flex items-center justify-center text-xs text-slate-400 overflow-hidden relative cursor-pointer" onclick="openGallery()">No Photo</div>
+                 </div>
+            </div>
 
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold text-lg text-slate-800">Sessions Log</h3>
@@ -147,7 +156,7 @@
             <p id="gallery-empty" class="text-center text-slate-400 mt-10 hidden">No photos found.</p>
         </section>
 
-        <!-- ADD PATIENT FORM -->
+        <!-- ADD PATIENT FORM (Updated) -->
         <section id="view-add-patient" class="hidden p-4 fade-enter pb-20">
             <h2 class="text-xl font-bold text-slate-800 mb-6">Add New Patient</h2>
             <form id="form-add-patient" class="space-y-4">
@@ -172,7 +181,7 @@
                     </div>
                 </div>
 
-                <!-- NEW: Treatment Plan Field -->
+                <!-- Treatment Plan Field -->
                 <div>
                     <label class="block text-sm font-medium mb-1 text-slate-700">Treatment Plan (Overview)</label>
                     <textarea id="inp-treatment-plan" rows="2" placeholder="e.g., Extraction of 4s, U/L Fixed appliances..." class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border focus:ring-2 focus:ring-teal-500"></textarea>
@@ -190,6 +199,31 @@
                         <button type="button" onclick="setTodayDate('inp-date')" class="px-4 py-2 bg-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-300 transition shadow-sm">Today</button>
                     </div>
                 </div>
+                
+                <!-- NEW: Initial Images Upload -->
+                <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                     <!-- X-Ray Upload -->
+                     <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center hover:bg-slate-50 transition cursor-pointer">
+                        <label class="cursor-pointer block">
+                            <span class="block text-xs font-bold text-slate-500 mb-1">☢️ Initial X-Ray</span>
+                            <div id="preview-init-xray-box" class="h-16 w-full bg-slate-100 rounded flex items-center justify-center overflow-hidden">
+                                <span class="text-slate-400 text-xl">+</span>
+                            </div>
+                            <input type="file" id="inp-init-xray" accept="image/*" class="hidden" onchange="previewInitialImage(this, 'preview-init-xray-box')">
+                        </label>
+                     </div>
+                     
+                     <!-- Photo Upload -->
+                     <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center hover:bg-slate-50 transition cursor-pointer">
+                        <label class="cursor-pointer block">
+                            <span class="block text-xs font-bold text-slate-500 mb-1">📸 Initial Photo</span>
+                            <div id="preview-init-photo-box" class="h-16 w-full bg-slate-100 rounded flex items-center justify-center overflow-hidden">
+                                <span class="text-slate-400 text-xl">+</span>
+                            </div>
+                            <input type="file" id="inp-init-photo" accept="image/*" class="hidden" onchange="previewInitialImage(this, 'preview-init-photo-box')">
+                        </label>
+                     </div>
+                </div>
 
                 <button type="submit" id="btn-submit-patient" class="w-full bg-teal-600 text-white py-3 rounded-xl font-bold shadow-md mt-4">Create File</button>
             </form>
@@ -199,7 +233,6 @@
         <section id="view-add-session" class="hidden p-4 fade-enter">
             <h2 class="text-xl font-bold text-slate-800 mb-4">Log New Session</h2>
             
-            <!-- NEW: Patient Banner in Add Session -->
             <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6 flex justify-between items-center">
                 <div>
                     <p class="text-xs text-indigo-500 font-bold uppercase tracking-wider">Current Patient</p>
@@ -272,7 +305,7 @@
         };
 
         // 2. PASTE GEMINI API KEY HERE (If you have one)
-        const geminiApiKey = "AIzaSyDANf3xfyLHqmmB4MwKxeUAKy81C1AVPFE"; 
+        const geminiApiKey = ""; 
         // --------------
 
         const app = initializeApp(firebaseConfig);
@@ -449,6 +482,19 @@
             // Populate Treatment Plan
             document.getElementById('p-treatment-plan').innerText = p.treatmentPlan || "No plan recorded.";
             
+            // Handle Initial Images (If Any)
+            const imgSec = document.getElementById('p-initial-images');
+            const xrayPrev = document.getElementById('preview-xray');
+            const photoPrev = document.getElementById('preview-photo');
+            
+            if(p.initXray || p.initPhoto) {
+                imgSec.classList.remove('hidden');
+                xrayPrev.innerHTML = p.initXray ? `<img src="${p.initXray}" class="w-full h-full object-cover">` : 'No X-Ray';
+                photoPrev.innerHTML = p.initPhoto ? `<img src="${p.initPhoto}" class="w-full h-full object-cover">` : 'No Photo';
+            } else {
+                imgSec.classList.add('hidden');
+            }
+
             loadMiniSessions(p.id); navTo('view-patient');
         }
 
@@ -472,11 +518,27 @@
             document.getElementById('new-serial-id').innerText = (max + 1).toString().padStart(3, '0');
         }
 
-        // --- ADD PATIENT (Updated) ---
+        // --- NEW: Initial Image Helpers ---
+        let initXrayBase64 = null;
+        let initPhotoBase64 = null;
+        
+        window.previewInitialImage = async (input, previewId) => {
+            if (input.files && input.files[0]) {
+                const box = document.getElementById(previewId);
+                box.innerHTML = '<div class="loader"></div>';
+                const resized = await resizeImage(input.files[0]);
+                
+                if(previewId.includes('xray')) initXrayBase64 = resized;
+                else initPhotoBase64 = resized;
+                
+                box.innerHTML = `<img src="${resized}" class="w-full h-full object-cover">`;
+            }
+        };
+
+        // --- ADD PATIENT (Updated with Initial Photos) ---
         document.getElementById('btn-submit-patient').addEventListener('click', async (e) => {
             e.preventDefault(); if (!currentUser) return alert("Login first.");
             
-            // Combine 3 names
             const n1 = document.getElementById('inp-name-1').value.trim();
             const n2 = document.getElementById('inp-name-2').value.trim();
             const n3 = document.getElementById('inp-name-3').value.trim();
@@ -486,19 +548,29 @@
 
             const btn = e.target; btn.disabled = true; btn.innerText = 'Saving...';
             try {
+                // Add initial photos to Session 0 (or directly to patient doc for simplicity in this view)
                 await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients'), {
                     name: fullName, 
-                    firstName: n1, middleName: n2, lastName: n3, // Store parts too
+                    firstName: n1, middleName: n2, lastName: n3,
                     serialId: document.getElementById('new-serial-id').innerText,
-                    treatmentPlan: document.getElementById('inp-treatment-plan').value, // NEW
+                    treatmentPlan: document.getElementById('inp-treatment-plan').value,
                     castId: document.getElementById('inp-cast').value, 
                     type: document.getElementById('inp-type').value,
                     startDate: document.getElementById('inp-date').value, 
-                    balance: 0, totalPhotos: 0, nextPlan: 'Initial Consultation', createdAt: serverTimestamp()
+                    initXray: initXrayBase64, // Storing initial records
+                    initPhoto: initPhotoBase64,
+                    balance: 0, totalPhotos: (initXrayBase64?1:0) + (initPhotoBase64?1:0), 
+                    nextPlan: 'Initial Consultation', createdAt: serverTimestamp()
                 }); 
-                document.getElementById('form-add-patient').reset(); 
+                
+                // Reset
+                document.getElementById('form-add-patient').reset();
+                initXrayBase64 = null; initPhotoBase64 = null;
+                document.getElementById('preview-init-xray-box').innerHTML = '<span class="text-slate-400 text-xl">+</span>';
+                document.getElementById('preview-init-photo-box').innerHTML = '<span class="text-slate-400 text-xl">+</span>';
+                
                 navTo('view-home');
-            } catch(err) { alert('Error'); console.error(err); } btn.disabled = false; btn.innerText = 'Create File';
+            } catch(err) { alert('Error: ' + err.message); console.error(err); } btn.disabled = false; btn.innerText = 'Create File';
         });
 
         let sessImg = null;
@@ -524,6 +596,17 @@
             navTo('view-gallery'); const grid = document.getElementById('gallery-grid'); grid.innerHTML = '<div class="col-span-full text-center text-slate-400">Loading...</div>';
             const snap = await getDocs(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', currentPatientId, 'sessions'), orderBy('date', 'desc')));
             grid.innerHTML = ''; let count = 0;
+            
+            // Add Initial Images to Gallery View
+            if(currentPatient.initXray) {
+                 count++;
+                 grid.innerHTML += `<div class="aspect-square bg-slate-100 rounded-lg overflow-hidden border relative"><img src="${currentPatient.initXray}" class="w-full h-full object-cover"><div class="absolute bottom-0 w-full bg-black/50 text-white text-[10px] p-1 truncate">Initial X-Ray</div></div>`;
+            }
+            if(currentPatient.initPhoto) {
+                 count++;
+                 grid.innerHTML += `<div class="aspect-square bg-slate-100 rounded-lg overflow-hidden border relative"><img src="${currentPatient.initPhoto}" class="w-full h-full object-cover"><div class="absolute bottom-0 w-full bg-black/50 text-white text-[10px] p-1 truncate">Initial Photo</div></div>`;
+            }
+
             snap.forEach(d => { const s = d.data(); if(s.hasPhoto && s.photoData) { count++; const div = document.createElement('div'); div.className = "aspect-square bg-slate-100 rounded-lg overflow-hidden border relative"; div.innerHTML = `<img src="${s.photoData}" class="w-full h-full object-cover"><div class="absolute bottom-0 w-full bg-black/50 text-white text-[10px] p-1 truncate">${s.date}</div>`; grid.appendChild(div); } });
             document.getElementById('gallery-empty').classList.toggle('hidden', count > 0);
         };
