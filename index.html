@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orthodontic Clinic Manager (AI)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Markdown for AI Formatting -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-enter { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #0d9488; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Markdown Styles */
+        .prose h3 { font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; color: #0f766e; }
+        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .prose p { margin-bottom: 0.5em; line-height: 1.5; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 shadow-sm z-20">
+        <div class="max-w-3xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <button id="btnBack" onclick="goBack()" class="hidden p-2 text-slate-500 hover:bg-slate-100 rounded-full transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </button>
+                <div class="flex items-center gap-2">
+                    <div class="bg-teal-600 text-white p-1.5 rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h1 class="font-bold text-lg text-slate-800 tracking-tight">OrthoManager <span class="text-xs font-normal text-white bg-gradient-to-r from-indigo-500 to-purple-500 px-2 py-0.5 rounded-full ml-1 shadow-sm">AI</span></h1>
+                </div>
+            </div>
+            <div id="authStatus" class="text-xs font-medium px-2 py-1 bg-slate-100 rounded text-slate-500">Waiting...</div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="app-container" class="flex-1 overflow-y-auto relative max-w-3xl mx-auto w-full">
+        
+        <!-- HOME VIEW -->
+        <section id="view-home" class="p-4 fade-enter min-h-full pb-20">
+            <div class="sticky top-0 bg-slate-50 pt-2 pb-4 z-10 space-y-3">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="Search by Name or ID..." class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-teal-500 outline-none transition">
+                    <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                    <button onclick="filterList('all')" class="filter-btn active px-4 py-1.5 rounded-full text-sm font-medium bg-teal-600 text-white shadow-sm ring-1 ring-teal-600" data-filter="all">All</button>
+                    <button onclick="filterList('paid')" class="filter-btn px-4 py-1.5 rounded-full text-sm font-medium bg-white text-slate-600 ring-1 ring-slate-200" data-filter="paid">Paid</button>
+                    <button onclick="filterList('outstanding')" class="filter-btn px-4 py-1.5 rounded-full text-sm font-medium bg-white text-slate-600 ring-1 ring-slate-200" data-filter="outstanding">Outstanding</button>
+                </div>
+            </div>
+            
+            <div id="patientsList" class="space-y-3">
+                <div class="text-center py-12 text-slate-400">
+                    <p class="mb-2 text-3xl">🔒</p>
+                    <p class="font-medium text-slate-600">Secure Login Required</p>
+                </div>
+            </div>
+
+            <button onclick="navTo('view-add-patient')" class="fixed bottom-6 right-6 bg-teal-600 hover:bg-teal-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition transform hover:scale-105 z-30">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </button>
+        </section>
+
+        <!-- PATIENT PROFILE VIEW -->
+        <section id="view-patient" class="hidden p-4 fade-enter pb-24">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-teal-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h2 id="p-name" class="text-2xl font-bold text-slate-800">--</h2>
+                            <p class="text-sm text-slate-500 font-mono mt-1">ID: <span id="p-serial">#---</span></p>
+                        </div>
+                        <span id="p-type" class="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded uppercase">--</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4 text-sm">
+                        <div><p class="text-slate-400 text-xs">Cast ID</p><p id="p-cast" class="font-semibold text-slate-700">--</p></div>
+                        <div><p class="text-slate-400 text-xs">Start Date</p><p id="p-date" class="font-semibold text-slate-700">--</p></div>
+                        <div><p class="text-slate-400 text-xs">Photos</p><p id="p-photos" class="font-semibold text-slate-700">0</p></div>
+                        <div><p class="text-slate-400 text-xs">Balance</p><p id="p-balance" class="font-semibold text-red-600">$0</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-slate-800">Sessions Log</h3>
+                <div class="flex gap-2">
+                    <!-- AI Analysis Button -->
+                    <button onclick="analyzePatientHistory()" class="text-xs font-medium bg-gradient-to-r from-purple-100 to-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full flex items-center gap-1 hover:shadow-sm transition border border-indigo-200">
+                        <span id="btn-analyze-icon">✨</span> Analyze
+                    </button>
+                    <button onclick="openGallery()" class="text-xs font-medium bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-slate-200 transition">
+                        📸 Gallery
+                    </button>
+                </div>
+            </div>
+
+            <div id="mini-sessions-list" class="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-slate-200 before:z-0 pb-4">
+                <div class="text-center py-6 text-slate-400 pl-8">Loading history...</div>
+            </div>
+
+            <div class="fixed bottom-4 left-0 right-0 px-4 max-w-3xl mx-auto z-20">
+                <button onclick="navTo('view-add-session')" class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3.5 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition transform hover:scale-[1.01]">
+                    + Add New Session
+                </button>
+            </div>
+        </section>
+
+        <!-- AI ANALYSIS MODAL -->
+        <div id="modal-analysis" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-4 fade-enter">
+            <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
+                <div class="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex justify-between items-center">
+                    <h3 class="font-bold flex items-center gap-2">✨ Gemini Analysis</h3>
+                    <button onclick="document.getElementById('modal-analysis').classList.add('hidden')" class="p-1 hover:bg-white/20 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                </div>
+                <div id="analysis-content" class="p-5 overflow-y-auto prose prose-sm text-slate-600 leading-relaxed">
+                    <!-- AI Content will appear here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- GALLERY VIEW -->
+        <section id="view-gallery" class="hidden p-4 fade-enter pb-20">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-slate-800">Gallery</h2>
+                <button onclick="goBack()" class="text-sm text-slate-500">Close</button>
+            </div>
+            <div id="gallery-grid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+            <p id="gallery-empty" class="text-center text-slate-400 mt-10 hidden">No photos found.</p>
+        </section>
+
+        <!-- ADD PATIENT FORM -->
+        <section id="view-add-patient" class="hidden p-4 fade-enter">
+            <h2 class="text-xl font-bold text-slate-800 mb-6">Add New Patient</h2>
+            <form id="form-add-patient" class="space-y-4">
+                <div class="bg-slate-100 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
+                    <span class="text-sm text-slate-500">Auto Serial ID</span>
+                    <span id="new-serial-id" class="font-mono font-bold text-slate-700 text-lg">Loading...</span>
+                </div>
+                <div><label class="block text-sm font-medium mb-1">Full Name</label><input type="text" id="inp-name" required class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium mb-1">Cast ID</label><input type="text" id="inp-cast" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></div>
+                    <div><label class="block text-sm font-medium mb-1">Type</label><select id="inp-type" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border bg-white"><option>New</option><option>Existing</option></select></div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Start Date</label>
+                    <div class="flex gap-2">
+                        <input type="date" id="inp-date" required class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border">
+                        <button type="button" onclick="setTodayDate('inp-date')" class="px-4 py-2 bg-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-300 transition shadow-sm">Today</button>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit-patient" class="w-full bg-teal-600 text-white py-3 rounded-xl font-bold shadow-md mt-4">Create File</button>
+            </form>
+        </section>
+
+        <!-- ADD SESSION FORM -->
+        <section id="view-add-session" class="hidden p-4 fade-enter">
+            <h2 class="text-xl font-bold text-slate-800 mb-6">Log New Session</h2>
+            <form id="form-add-session" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Date</label>
+                    <div class="flex gap-2">
+                        <input type="date" id="sess-date" required class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border">
+                        <button type="button" onclick="setTodayDate('sess-date')" class="px-4 py-2 bg-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-300 transition shadow-sm">Today</button>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-sm font-medium">Procedure</label>
+                        <button type="button" onclick="askGeminiProcedures()" class="text-xs flex items-center gap-1 text-teal-600 bg-teal-50 border border-teal-200 px-2 py-1 rounded-full"><span id="ai-icon-1">✨</span> AI Suggest</button>
+                    </div>
+                    <textarea id="sess-procedure" rows="2" placeholder="Details..." class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></textarea>
+                    <div id="ai-suggestions" class="flex flex-wrap gap-2 mt-2 hidden"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium mb-1">Payment ($)</label><input type="number" id="sess-payment" min="0" value="0" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></div>
+                    <div><label class="block text-sm font-medium mb-1">New Balance ($)</label><input type="number" id="sess-balance" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-sm font-medium">Next Plan</label>
+                        <button type="button" onclick="askGeminiPlan()" class="text-xs flex items-center gap-1 text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-full"><span id="ai-icon-2">🤖</span> AI Suggest</button>
+                    </div>
+                    <input type="text" id="sess-next-plan" placeholder="Plan..." class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border">
+                </div>
+
+                <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center">
+                    <label class="cursor-pointer block">
+                        <span class="block text-sm font-medium text-slate-600 mb-1">📸 Add Photo</span>
+                        <span class="block text-xs text-slate-400 mb-2">Auto-compressed</span>
+                        <input type="file" id="sess-photo" accept="image/*" class="hidden" onchange="previewImage(this)">
+                        <div id="photo-preview" class="mx-auto h-24 w-24 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200"><span class="text-slate-300 text-2xl">+</span></div>
+                    </label>
+                </div>
+
+                <button type="submit" id="btn-submit-session" class="w-full bg-teal-600 text-white py-3 rounded-xl font-bold shadow-md">Save Session</button>
+            </form>
+        </section>
+    </main>
+
+    <!-- LOGIC -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+
+        // --- CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAgt_5aFkY3gXNXFp9NnonUiPsnH7O9l-g",
+            authDomain: "myclinicapp-835ea.firebaseapp.com",
+            projectId: "myclinicapp-835ea",
+            storageBucket: "myclinicapp-835ea.firebasestorage.app",
+            messagingSenderId: "1034311064784",
+            appId: "1:1034311064784:web:83d3cd53775b292782d2d5",
+            measurementId: "G-V6DCB3XBF5"
+        };
+
+        // 🔑 PASTE YOUR GEMINI API KEY HERE
+        const geminiApiKey = "AIzaSyDANf3xfyLHqmmB4MwKxeUAKy81C1AVPFE"; 
+        // --------------------------------
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = "my-clinic-v1"; 
+
+        let currentUser = null, currentPatient = null, currentPatientId = null;
+
+        window.setTodayDate = (id) => document.getElementById(id).valueAsDate = new Date();
+
+        // --- AUTH ---
+        onAuthStateChanged(auth, (user) => {
+            if(user) {
+                currentUser = user;
+                document.getElementById('authStatus').innerText = 'Online';
+                document.getElementById('authStatus').className = "text-xs font-medium px-2 py-1 bg-green-100 rounded text-green-600";
+                loadPatients('all');
+            } else {
+                const email = prompt("🔒 SECURE ACCESS\nPlease enter your clinic email:");
+                const password = prompt("Please enter your password:");
+                if(email && password) {
+                    document.getElementById('authStatus').innerText = 'Verifying...';
+                    signInWithEmailAndPassword(auth, email, password)
+                        .then(() => {})
+                        .catch(() => { alert("Access Denied"); document.getElementById('authStatus').innerText = 'Denied'; });
+                } else {
+                    document.getElementById('authStatus').innerText = 'Locked';
+                }
+            }
+        });
+
+        // --- GEMINI AI API ---
+        async function callGemini(prompt) {
+            if(!geminiApiKey) { alert("Please add your Gemini API Key in the code."); return null; }
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text;
+            } catch (error) { console.error("AI Error:", error); return null; }
+        }
+
+        // --- NEW: AI History Analysis ---
+        window.analyzePatientHistory = async () => {
+            if(!currentPatientId) return;
+            
+            // 1. Show Modal & Loading
+            const modal = document.getElementById('modal-analysis');
+            const content = document.getElementById('analysis-content');
+            modal.classList.remove('hidden');
+            content.innerHTML = `<div class="text-center py-10"><div class="loader mx-auto mb-2"></div><p class="text-slate-500">Reading patient history...</p></div>`;
+
+            // 2. Fetch last 10 sessions
+            try {
+                const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', currentPatientId, 'sessions'), orderBy('date', 'asc'));
+                const snap = await getDocs(q);
+                
+                if(snap.empty) {
+                    content.innerHTML = `<p class="text-center text-slate-500">No sessions found to analyze.</p>`;
+                    return;
+                }
+
+                // 3. Build Context String
+                let historyText = `Patient: ${currentPatient.name} (${currentPatient.type})\nTreatment Start: ${currentPatient.startDate}\n\nSESSION LOG:\n`;
+                snap.forEach(doc => {
+                    const s = doc.data();
+                    historyText += `- Date: ${s.date}, Procedure: ${s.procedure}, Next Plan: ${s.nextPlan}\n`;
+                });
+
+                // 4. Prompt Engineering
+                const prompt = `As an expert orthodontist assistant, analyze this patient history:\n\n${historyText}\n\nProvide a concise clinical summary in Markdown format. Include: 1) Brief summary of progress. 2) Any recurring procedures or concerns. 3) Suggest focus for next 3 visits. Keep it professional.`;
+
+                // 5. Call API
+                const result = await callGemini(prompt);
+                
+                // 6. Render
+                if(result) {
+                    content.innerHTML = marked.parse(result);
+                } else {
+                    content.innerHTML = `<p class="text-red-500">Could not generate analysis. Check API Key.</p>`;
+                }
+
+            } catch(err) {
+                console.error(err);
+                content.innerHTML = `<p class="text-red-500">Error fetching data.</p>`;
+            }
+        };
+
+        // --- AI Suggest Procedures ---
+        window.askGeminiProcedures = async () => {
+            const icon = document.getElementById('ai-icon-1'); 
+            const originalText = icon.innerText;
+            icon.innerHTML = '...';
+            
+            const prompt = `List 5 common short orthodontic clinical procedures for a ${currentPatient?.type || 'ortho'} patient. Return ONLY 5 phrases separated by pipes (|). Example: Changed Archwire|Power Chain|IPR`;
+            const res = await callGemini(prompt);
+            
+            if(res) {
+                const box = document.getElementById('ai-suggestions'); 
+                box.classList.remove('hidden'); 
+                box.innerHTML = '';
+                res.split('|').forEach(s => { 
+                    if(!s.trim()) return; 
+                    const b = document.createElement('button'); 
+                    b.className = "px-2 py-1 bg-teal-50 text-teal-700 text-xs rounded border border-teal-100 hover:bg-teal-100 transition"; 
+                    b.type = "button"; 
+                    b.innerText = s.trim(); 
+                    b.onclick = () => { 
+                        const f = document.getElementById('sess-procedure'); 
+                        f.value = f.value ? f.value + ", " + s.trim() : s.trim(); 
+                    }; 
+                    box.appendChild(b); 
+                });
+            }
+            icon.innerText = originalText;
+        };
+
+        // --- AI Suggest Plan ---
+        window.askGeminiPlan = async () => {
+            const proc = document.getElementById('sess-procedure').value; 
+            if(!proc) return alert('Fill procedure first');
+            const icon = document.getElementById('ai-icon-2'); 
+            icon.innerText = '...';
+            
+            const res = await callGemini(`Based on procedure "${proc}", suggest a concise 3-5 word plan for the next orthodontic visit. Return ONLY the text.`);
+            if(res) document.getElementById('sess-next-plan').value = res.trim(); 
+            icon.innerText = '🤖';
+        };
+
+        // --- Image Logic ---
+        function resizeImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxDim = 800; let w = img.width, h = img.height;
+                        if(w > h) { if(w > maxDim) { h *= maxDim/w; w = maxDim; } } else { if(h > maxDim) { w *= maxDim/h; h = maxDim; } }
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // --- Navigation & Logic ---
+        const views = ['view-home', 'view-patient', 'view-gallery', 'view-add-patient', 'view-add-session'];
+        window.navTo = (id) => {
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            const btnBack = document.getElementById('btnBack');
+            if(id === 'view-home') { btnBack.classList.add('hidden'); currentPatient = null; } else btnBack.classList.remove('hidden');
+            if(id === 'view-add-patient') generateSerial();
+            if(id === 'view-add-session') resetSessionForm();
+        };
+        window.goBack = () => {
+            const cur = views.find(v => !document.getElementById(v).classList.contains('hidden'));
+            if(cur.includes('add') || cur === 'view-patient') navTo('view-home'); else navTo('view-patient');
+        };
+
+        // --- Data ---
+        let allPats = [];
+        function loadPatients() {
+            if(!currentUser) return;
+            onSnapshot(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients'), orderBy('createdAt', 'desc')), (snap) => {
+                allPats = []; snap.forEach(d => allPats.push({id: d.id, ...d.data()})); renderList('all');
+            }, () => document.getElementById('patientsList').innerHTML = '<div class="text-center py-12 text-red-400">Access Denied</div>');
+        }
+        window.filterList = (type) => {
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.toggle('bg-teal-600', b.dataset.filter === type);
+                b.classList.toggle('text-white', b.dataset.filter === type);
+                b.classList.toggle('bg-white', b.dataset.filter !== type);
+            });
+            renderList(type);
+        };
+        function renderList(type) {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const list = document.getElementById('patientsList'); list.innerHTML = '';
+            const filtered = allPats.filter(p => {
+                const mSearch = p.name.toLowerCase().includes(search) || p.serialId.toLowerCase().includes(search);
+                const bal = p.balance || 0;
+                const mType = type === 'all' ? true : (type === 'paid' ? bal <= 0 : bal > 0);
+                return mSearch && mType;
+            });
+            if(!filtered.length) list.innerHTML = '<div class="text-center py-12 text-slate-400">No patients found.</div>';
+            filtered.forEach(p => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center hover:bg-slate-50 cursor-pointer";
+                div.onclick = () => openProfile(p);
+                div.innerHTML = `<div><h3 class="font-bold text-slate-800">${p.name}</h3><p class="text-xs text-slate-500">#${p.serialId}</p></div><div class="text-right"><span class="px-2 py-0.5 rounded text-xs ${p.balance > 0 ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">${p.balance > 0 ? 'Balance: $'+p.balance : 'Paid'}</span><div class="text-xs text-slate-400 mt-1">Next: ${p.nextPlan || '-'}</div></div>`;
+                list.appendChild(div);
+            });
+        }
+        document.getElementById('searchInput').addEventListener('input', () => renderList(document.querySelector('.filter-btn.bg-teal-600').dataset.filter));
+
+        function openProfile(p) {
+            currentPatient = p; currentPatientId = p.id;
+            document.getElementById('p-name').innerText = p.name; document.getElementById('p-serial').innerText = '#'+p.serialId;
+            document.getElementById('p-type').innerText = p.type; document.getElementById('p-cast').innerText = p.castId || '-';
+            document.getElementById('p-date').innerText = p.startDate; document.getElementById('p-photos').innerText = p.totalPhotos || 0;
+            const balEl = document.getElementById('p-balance');
+            balEl.innerText = p.balance > 0 ? '$'+p.balance : 'Paid'; balEl.className = p.balance > 0 ? 'font-semibold text-red-600' : 'font-semibold text-green-600';
+            loadMiniSessions(p.id); navTo('view-patient');
+        }
+
+        function loadMiniSessions(pid) {
+            const el = document.getElementById('mini-sessions-list'); el.innerHTML = '<div class="text-center py-4 text-slate-400">Loading...</div>';
+            onSnapshot(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', pid, 'sessions'), orderBy('date', 'desc')), (snap) => {
+                el.innerHTML = '';
+                if(snap.empty) { el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">No sessions yet.</div>'; return; }
+                snap.forEach(d => {
+                    const s = d.data();
+                    const div = document.createElement('div');
+                    div.className = "relative z-10 ml-5 pl-8 pb-4";
+                    div.innerHTML = `<div class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-teal-500 shadow"></div><div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm"><div class="flex justify-between mb-1"><span class="font-bold text-sm text-slate-800">${s.date}</span><span class="text-xs bg-slate-50 border px-2 py-0.5 rounded text-slate-500">Bal: $${s.balanceAfter}</span></div><p class="text-sm text-slate-600 font-medium">${s.procedure}</p><div class="flex items-center gap-3 mt-2 text-xs text-slate-400"><span class="flex items-center gap-1">💰 Paid: $${s.payment}</span>${s.hasPhoto ? '<span class="flex items-center gap-1 text-indigo-500">📸 Photo</span>' : ''}</div></div>`;
+                    el.appendChild(div);
+                });
+            });
+        }
+
+        function generateSerial() {
+            let max = 0; if(allPats.length) allPats.forEach(p => { const n = parseInt(p.serialId); if(!isNaN(n) && n > max) max = n; });
+            document.getElementById('new-serial-id').innerText = (max + 1).toString().padStart(3, '0');
+        }
+
+        // Save Logic
+        document.getElementById('btn-submit-patient').addEventListener('click', async (e) => {
+            e.preventDefault(); if (!currentUser) return alert("Login first.");
+            const btn = e.target; btn.disabled = true; btn.innerText = 'Saving...';
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients'), {
+                    name: document.getElementById('inp-name').value, serialId: document.getElementById('new-serial-id').innerText,
+                    castId: document.getElementById('inp-cast').value, type: document.getElementById('inp-type').value,
+                    startDate: document.getElementById('inp-date').value, balance: 0, totalPhotos: 0, nextPlan: 'Initial Consultation', createdAt: serverTimestamp()
+                }); document.getElementById('form-add-patient').reset(); navTo('view-home');
+            } catch(err) { alert('Error'); console.error(err); } btn.disabled = false; btn.innerText = 'Create File';
+        });
+
+        let sessImg = null;
+        function resetSessionForm() { document.getElementById('form-add-session').reset(); document.getElementById('sess-date').valueAsDate = new Date(); sessImg = null; document.getElementById('photo-preview').innerHTML = '<span class="text-slate-300 text-2xl">+</span>'; document.getElementById('ai-suggestions').classList.add('hidden'); }
+        
+        window.previewImage = async (inp) => { if(inp.files[0]) { document.getElementById('photo-preview').innerHTML = '<div class="loader"></div>'; sessImg = await resizeImage(inp.files[0]); document.getElementById('photo-preview').innerHTML = `<img src="${sessImg}" class="h-full w-full object-cover">`; } };
+
+        document.getElementById('btn-submit-session').addEventListener('click', async (e) => {
+            e.preventDefault(); if (!currentUser) return alert("Login first.");
+            const btn = e.target; btn.disabled = true; btn.innerText = 'Saving...';
+            try {
+                const bal = Number(document.getElementById('sess-balance').value); const plan = document.getElementById('sess-next-plan').value;
+                await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', currentPatientId, 'sessions'), {
+                    date: document.getElementById('sess-date').value, procedure: document.getElementById('sess-procedure').value,
+                    payment: Number(document.getElementById('sess-payment').value), balanceAfter: bal, nextPlan: plan,
+                    hasPhoto: !!sessImg, photoData: sessImg, createdAt: serverTimestamp()
+                });
+                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', currentPatientId), { balance: bal, nextPlan: plan, totalPhotos: (currentPatient.totalPhotos||0) + (sessImg?1:0) });
+                navTo('view-patient');
+            } catch(err) { console.error(err); alert('Error saving'); } btn.disabled = false; btn.innerText = 'Save Session';
+        });
+
+        window.openGallery = async () => {
+            navTo('view-gallery'); const grid = document.getElementById('gallery-grid'); grid.innerHTML = '<div class="col-span-full text-center text-slate-400">Loading...</div>';
+            const snap = await getDocs(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', currentPatientId, 'sessions'), orderBy('date', 'desc')));
+            grid.innerHTML = ''; let count = 0;
+            snap.forEach(d => { const s = d.data(); if(s.hasPhoto && s.photoData) { count++; const div = document.createElement('div'); div.className = "aspect-square bg-slate-100 rounded-lg overflow-hidden border relative"; div.innerHTML = `<img src="${s.photoData}" class="w-full h-full object-cover"><div class="absolute bottom-0 w-full bg-black/50 text-white text-[10px] p-1 truncate">${s.date}</div>`; grid.appendChild(div); } });
+            document.getElementById('gallery-empty').classList.toggle('hidden', count > 0);
+        };
+    </script>
+</body>
+</html>
