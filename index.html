@@ -81,6 +81,7 @@
         <!-- PATIENT PROFILE VIEW -->
         <section id="view-patient" class="hidden p-4 fade-enter pb-24">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-teal-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
                 <div class="relative z-10">
                     <h2 id="p-name" class="text-2xl font-bold text-slate-800">--</h2>
                     <p class="text-sm text-slate-500 font-mono">ID: <span id="p-serial">#---</span></p>
@@ -292,36 +293,18 @@
             if(id === 'view-add-session') resetSessionForm();
         };
 
-        // FIX: Robust Go Back Logic
         window.goBack = () => {
-            // If current view is HOME, do nothing
-            if(!document.getElementById('view-home').classList.contains('hidden')) return;
-
-            // If current view is PATIENT, go HOME
-            if(!document.getElementById('view-patient').classList.contains('hidden')) {
-                window.navTo('view-home');
-                return;
-            }
-
-            // If current view is ADD PATIENT, go HOME
-            if(!document.getElementById('view-add-patient').classList.contains('hidden')) {
-                window.navTo('view-home');
-                return;
-            }
-
-            // If current view is GALLERY or ADD SESSION, go back to PATIENT
-            if(!document.getElementById('view-gallery').classList.contains('hidden') || 
-               !document.getElementById('view-add-session').classList.contains('hidden')) {
-                if(currentPatient) {
-                    window.navTo('view-patient');
-                } else {
-                    window.navTo('view-home');
-                }
-                return;
-            }
+            const visibleView = views.find(v => !document.getElementById(v).classList.contains('hidden'));
             
-            // Fallback
-            window.navTo('view-home');
+            if (visibleView === 'view-patient') {
+                window.navTo('view-home');
+            } else if (visibleView === 'view-add-patient') {
+                window.navTo('view-home');
+            } else if (visibleView === 'view-add-session' || visibleView === 'view-gallery') {
+                window.navTo('view-patient');
+            } else {
+                window.navTo('view-home');
+            }
         };
         
         window.openProfile = (id) => {
@@ -478,17 +461,16 @@
             });
         }
         
+        // FIX: Removed searchInput dependency
         function renderList() {
             const list = document.getElementById('patientsList'); list.innerHTML = '';
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = allPats.filter(p => p.name.toLowerCase().includes(search) || p.serialId.includes(search));
             
-            if(filtered.length === 0) {
+            if(allPats.length === 0) {
                 list.innerHTML = '<div class="text-center py-12 text-slate-400">No patients found.</div>';
                 return;
             }
 
-            filtered.forEach(p => {
+            allPats.forEach(p => {
                 list.innerHTML += `
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center cursor-pointer group hover:bg-slate-50" onclick="openProfile('${p.id}')">
                     <div><h3 class="font-bold text-slate-800">${p.name}</h3><p class="text-xs text-slate-500">#${p.serialId}</p></div>
@@ -501,7 +483,6 @@
                 </div>`;
             });
         }
-        document.getElementById('searchInput').addEventListener('input', () => renderList());
 
         function loadMiniSessions(pid) {
             const el = document.getElementById('mini-sessions-list'); el.innerHTML = 'Loading...';
