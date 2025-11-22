@@ -77,20 +77,15 @@
     <!-- Main Content -->
     <main id="app-container" class="flex-1 overflow-y-auto relative max-w-3xl mx-auto w-full">
         
-        <!-- HOME VIEW -->
+        <!-- HOME VIEW (Cleaned up: No Search/Filters) -->
         <section id="view-home" class="p-4 fade-enter min-h-full pb-20">
-            <div class="sticky top-0 bg-slate-50 pt-2 pb-4 z-10 space-y-3">
-                <div class="relative">
-                    <input type="text" id="searchInput" placeholder="Search by Name or ID..." class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-teal-500 outline-none transition">
-                    <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-                <div class="flex gap-2 overflow-x-auto no-scrollbar">
-                    <button onclick="filterList('all')" class="filter-btn active px-4 py-1.5 rounded-full text-sm font-medium bg-teal-600 text-white shadow-sm ring-1 ring-teal-600" data-filter="all">All</button>
-                    <button onclick="filterList('paid')" class="filter-btn px-4 py-1.5 rounded-full text-sm font-medium bg-white text-slate-600 ring-1 ring-slate-200" data-filter="paid">Paid</button>
-                    <button onclick="filterList('outstanding')" class="filter-btn px-4 py-1.5 rounded-full text-sm font-medium bg-white text-slate-600 ring-1 ring-slate-200" data-filter="outstanding">Outstanding</button>
-                </div>
-            </div>
+            <!-- Removed Search & Filter Section -->
             
+            <div class="mb-4 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-slate-800">Patient List</h2>
+                <span class="text-xs text-slate-500" id="patient-count">Loading...</span>
+            </div>
+
             <div id="patientsList" class="space-y-3">
                 <div class="text-center py-12 text-slate-400">
                     <p class="mb-2 text-3xl">🔒</p>
@@ -288,28 +283,22 @@
         let currentUser = null, currentPatient = null, currentPatientId = null;
         let newRecords = {}; 
 
+        // GLOBALS
         window.setTodayDate = (id) => document.getElementById(id).valueAsDate = new Date();
         
-        // DELETE PATIENT FUNCTION
+        // Delete Function
         window.deletePatient = async (e, id) => {
-            e.stopPropagation(); // Prevent opening profile
-            if(!confirm("⚠️ Are you sure you want to delete this patient?\nThis action cannot be undone.")) return;
-            
+            e.stopPropagation(); 
+            if(!confirm("⚠️ Delete this patient and all records?")) return;
             try {
-                // 1. Delete subcollection sessions (Must fetch first)
+                // Delete sessions
                 const sessionsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', id, 'sessions');
                 const snap = await getDocs(sessionsRef);
                 const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
                 await Promise.all(deletePromises);
-                
-                // 2. Delete patient doc
+                // Delete patient
                 await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', id));
-                
-                alert("Patient deleted successfully.");
-            } catch(err) {
-                console.error(err);
-                alert("Error deleting: " + err.message);
-            }
+            } catch(err) { alert("Error: " + err.message); }
         };
 
         window.handlePhotoUpload = async (input, key) => {
@@ -326,16 +315,34 @@
         window.navTo = (id) => {
             views.forEach(v => document.getElementById(v).classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
+            
+            // FIX: Correct Logic for Go Back Button Visibility
+            const btnBack = document.getElementById('btnBack');
             if(id === 'view-home') { 
-                document.getElementById('btnBack').classList.add('hidden'); 
+                btnBack.classList.add('hidden'); 
                 currentPatient = null; 
             } else {
-                document.getElementById('btnBack').classList.remove('hidden');
+                btnBack.classList.remove('hidden');
             }
+
             if(id === 'view-add-patient') { generateSerial(); resetRecordsUI(); }
             if(id === 'view-add-session') resetSessionForm();
         };
-        window.goBack = () => window.navTo(currentPatient ? 'view-patient' : 'view-home');
+
+        // FIX: Correct Go Back Logic
+        window.goBack = () => {
+            const visibleView = views.find(v => !document.getElementById(v).classList.contains('hidden'));
+            
+            if (visibleView === 'view-patient') {
+                window.navTo('view-home');
+            } else if (visibleView === 'view-add-patient') {
+                window.navTo('view-home');
+            } else if (visibleView === 'view-add-session' || visibleView === 'view-gallery') {
+                window.navTo('view-patient');
+            } else {
+                window.navTo('view-home');
+            }
+        };
         
         window.openProfile = (id) => {
             const p = allPats.find(x => x.id === id);
@@ -362,16 +369,13 @@
             loadMiniSessions(p.id); window.navTo('view-patient');
         };
         
-        // --- ADVANCED GALLERY LOGIC (SORTED GROUPS) ---
         window.openGallery = async () => {
             window.navTo('view-gallery'); 
             const container = document.getElementById('gallery-container'); 
             container.innerHTML = '<div class="text-center py-10"><div class="loader mx-auto"></div></div>';
             
-            // 1. Gather ALL images with dates
             let allImages = [];
             
-            // A. Initial Records (Use Start Date)
             if(currentPatient.records) {
                 const map = { smile:'Smile', profile:'Profile', ceph:'Ceph', pano:'Pano', uo:'Upper', lo:'Lower', fr:'Front', rb:'Right', lb:'Left' };
                 Object.keys(currentPatient.records).forEach(k => {
@@ -386,7 +390,6 @@
                 });
             }
             
-            // B. Session Photos
             const snap = await getDocs(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', currentPatientId, 'sessions'), orderBy('date', 'desc')));
             snap.forEach(d => {
                 const s = d.data();
@@ -400,10 +403,8 @@
                 }
             });
             
-            // 2. Sort Descending
             allImages.sort((a, b) => b.timestamp - a.timestamp);
             
-            // 3. Group by Month
             container.innerHTML = '';
             if(allImages.length === 0) {
                 document.getElementById('gallery-empty').classList.remove('hidden');
@@ -415,24 +416,20 @@
             let groupContainer = null;
             
             allImages.forEach(img => {
-                // Parse Month Year
                 const d = new Date(img.date);
                 const monthYear = isNaN(d.getTime()) ? "Initial Records" : d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
                 
                 if(monthYear !== currentGroup) {
                     currentGroup = monthYear;
-                    // Create Header
-                    container.innerHTML += `<div class="sticky top-0 bg-slate-50/95 backdrop-blur py-2 z-10 border-b border-slate-200"><h3 class="font-bold text-slate-700 text-sm">${currentGroup}</h3></div>`;
-                    // Create Grid
+                    container.innerHTML += `<div class="sticky top-0 bg-slate-50/95 backdrop-blur py-2 z-10 border-b border-slate-200 mb-2"><h3 class="font-bold text-slate-700 text-sm">${currentGroup}</h3></div>`;
                     groupContainer = document.createElement('div');
                     groupContainer.className = "grid grid-cols-2 md:grid-cols-3 gap-3 mb-6";
                     container.appendChild(groupContainer);
                 }
                 
-                // Add Image
                 groupContainer.innerHTML += `
                     <div class="aspect-square bg-white rounded-lg overflow-hidden border border-slate-200 relative shadow-sm group">
-                        <img src="${img.src}" class="w-full h-full object-cover">
+                        <img src="${img.src}" class="w-full h-full object-contain bg-black">
                         <div class="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] p-1 truncate">
                             ${img.date} • ${img.label}
                         </div>
@@ -493,18 +490,23 @@
             document.getElementById('form-add-patient').reset();
         }
 
-        let allPats = [];
         function loadPatients() {
             if(!currentUser) return;
             onSnapshot(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients'), orderBy('createdAt', 'desc')), (snap) => {
-                allPats = []; snap.forEach(d => allPats.push({id: d.id, ...d.data()})); renderList('all');
+                allPats = []; 
+                snap.forEach(d => allPats.push({id: d.id, ...d.data()})); 
+                
+                // Update Count
+                document.getElementById('patient-count').innerText = allPats.length + " Patients";
+                
+                renderList(); // Render plain list
             });
         }
-        function renderList(type) {
+        
+        // Simple Render List (No Filter)
+        function renderList() {
             const list = document.getElementById('patientsList'); list.innerHTML = '';
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = allPats.filter(p => p.name.toLowerCase().includes(search) || p.serialId.includes(search));
-            filtered.forEach(p => {
+            allPats.forEach(p => {
                 list.innerHTML += `
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center cursor-pointer group hover:bg-slate-50" onclick="openProfile('${p.id}')">
                     <div><h3 class="font-bold text-slate-800">${p.name}</h3><p class="text-xs text-slate-500">#${p.serialId}</p></div>
@@ -517,7 +519,6 @@
                 </div>`;
             });
         }
-        document.getElementById('searchInput').addEventListener('input', () => renderList('all'));
 
         function loadMiniSessions(pid) {
             const el = document.getElementById('mini-sessions-list'); el.innerHTML = 'Loading...';
