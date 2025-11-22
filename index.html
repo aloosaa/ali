@@ -18,26 +18,8 @@
         .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #0d9488; width: 16px; height: 16px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Dental Grid Layout */
-        .dental-cross-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: 1fr 1fr 1fr;
-            gap: 0.75rem;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        
-        .photo-frame {
-            position: relative;
-            border: 2px dashed #cbd5e1;
-            border-radius: 0.75rem;
-            background-color: #f1f5f9;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex; align-items: center; justify-content: center;
-        }
+        .dental-cross-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 0.75rem; max-width: 500px; margin: 0 auto; }
+        .photo-frame { position: relative; border: 2px dashed #cbd5e1; border-radius: 0.75rem; background-color: #f1f5f9; overflow: hidden; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
         .photo-frame:hover { border-color: #0d9488; background-color: #e2e8f0; }
         .photo-content { width: 100%; height: 100%; object-fit: contain; display: none; background-color: #000; }
         .photo-placeholder { display: flex; flex-direction: column; align-items: center; color: #94a3b8; text-align: center; padding: 0.5rem; }
@@ -77,10 +59,8 @@
     <!-- Main Content -->
     <main id="app-container" class="flex-1 overflow-y-auto relative max-w-3xl mx-auto w-full">
         
-        <!-- HOME VIEW (Cleaned up: No Search/Filters) -->
+        <!-- HOME VIEW -->
         <section id="view-home" class="p-4 fade-enter min-h-full pb-20">
-            <!-- Removed Search & Filter Section -->
-            
             <div class="mb-4 flex justify-between items-center">
                 <h2 class="text-xl font-bold text-slate-800">Patient List</h2>
                 <span class="text-xs text-slate-500" id="patient-count">Loading...</span>
@@ -88,8 +68,8 @@
 
             <div id="patientsList" class="space-y-3">
                 <div class="text-center py-12 text-slate-400">
-                    <p class="mb-2 text-3xl">🔒</p>
-                    <p class="font-medium text-slate-600">Secure Login Required</p>
+                    <div class="loader mx-auto mb-4"></div>
+                    <p class="font-medium text-slate-600">Connecting to Database...</p>
                 </div>
             </div>
 
@@ -101,15 +81,9 @@
         <!-- PATIENT PROFILE VIEW -->
         <section id="view-patient" class="hidden p-4 fade-enter pb-24">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-20 h-20 bg-teal-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
                 <div class="relative z-10">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h2 id="p-name" class="text-2xl font-bold text-slate-800">--</h2>
-                            <p class="text-sm text-slate-500 font-mono mt-1">ID: <span id="p-serial">#---</span></p>
-                        </div>
-                        <span id="p-type" class="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded uppercase">--</span>
-                    </div>
+                    <h2 id="p-name" class="text-2xl font-bold text-slate-800">--</h2>
+                    <p class="text-sm text-slate-500 font-mono">ID: <span id="p-serial">#---</span></p>
                     <div class="grid grid-cols-2 gap-4 mt-4 text-sm">
                         <div><p class="text-slate-400 text-xs">Cast ID</p><p id="p-cast" class="font-semibold text-slate-700">--</p></div>
                         <div><p class="text-slate-400 text-xs">Start Date</p><p id="p-date" class="font-semibold text-slate-700">--</p></div>
@@ -121,7 +95,6 @@
 
             <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-xl mb-6 shadow-sm">
                 <h3 class="text-amber-800 font-bold text-sm uppercase tracking-wide mb-1 flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                     Treatment Plan
                 </h3>
                 <p id="p-treatment-plan" class="text-slate-700 font-medium text-sm">No plan recorded.</p>
@@ -159,13 +132,12 @@
             </div>
         </section>
 
-        <!-- GALLERY VIEW (IMPROVED) -->
+        <!-- GALLERY VIEW -->
         <section id="view-gallery" class="hidden p-4 fade-enter pb-20">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-slate-800">Gallery Timeline</h2>
                 <button onclick="goBack()" class="text-sm text-slate-500 font-medium px-3 py-1 rounded hover:bg-slate-100">Close</button>
             </div>
-            <!-- Timeline Grid -->
             <div id="gallery-container" class="space-y-6"></div>
             <p id="gallery-empty" class="text-center text-slate-400 mt-10 hidden">No photos found.</p>
         </section>
@@ -203,10 +175,7 @@
                 <hr class="border-slate-200 my-2">
 
                 <div>
-                    <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
-                        Extraoral & X-Rays
-                    </h3>
+                    <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">Extraoral & X-Rays</h3>
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <label class="photo-frame ratio-portrait group"><div class="photo-placeholder" id="ph-smile"><span class="text-2xl mb-1">😃</span><span class="text-xs font-bold">Smile</span></div><img id="img-smile" class="photo-content"><div class="photo-overlay">🔄 Replace</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'smile')"></label>
                         <label class="photo-frame ratio-portrait group"><div class="photo-placeholder" id="ph-profile"><span class="text-2xl mb-1">👤</span><span class="text-xs font-bold">Profile</span></div><img id="img-profile" class="photo-content"><div class="photo-overlay">🔄 Replace</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'profile')"></label>
@@ -216,10 +185,7 @@
                         <label class="photo-frame ratio-landscape group col-span-1 self-center"><div class="photo-placeholder" id="ph-pano"><span class="text-2xl mb-1">🦷</span><span class="text-xs font-bold">Panorama</span></div><img id="img-pano" class="photo-content"><div class="photo-overlay">🔄 Replace</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'pano')"></label>
                     </div>
 
-                    <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Intraoral (Full View)
-                    </h3>
+                    <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">Intraoral (Full View)</h3>
                     <div class="dental-cross-grid">
                         <label class="photo-frame ratio-square pos-top group"><div class="photo-placeholder" id="ph-uo"><span class="text-xs font-bold">Upper</span></div><img id="img-uo" class="photo-content"><div class="photo-overlay text-[10px]">🔄</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'uo')"></label>
                         <label class="photo-frame ratio-square pos-left group"><div class="photo-placeholder" id="ph-rb"><span class="text-xs font-bold">Right</span></div><img id="img-rb" class="photo-content"><div class="photo-overlay text-[10px]">🔄</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'rb')"></label>
@@ -291,12 +257,10 @@
             e.stopPropagation(); 
             if(!confirm("⚠️ Delete this patient and all records?")) return;
             try {
-                // Delete sessions
                 const sessionsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', id, 'sessions');
                 const snap = await getDocs(sessionsRef);
                 const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
                 await Promise.all(deletePromises);
-                // Delete patient
                 await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', id));
             } catch(err) { alert("Error: " + err.message); }
         };
@@ -316,7 +280,6 @@
             views.forEach(v => document.getElementById(v).classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
             
-            // FIX: Correct Logic for Go Back Button Visibility
             const btnBack = document.getElementById('btnBack');
             if(id === 'view-home') { 
                 btnBack.classList.add('hidden'); 
@@ -329,19 +292,36 @@
             if(id === 'view-add-session') resetSessionForm();
         };
 
-        // FIX: Correct Go Back Logic
+        // FIX: Robust Go Back Logic
         window.goBack = () => {
-            const visibleView = views.find(v => !document.getElementById(v).classList.contains('hidden'));
-            
-            if (visibleView === 'view-patient') {
+            // If current view is HOME, do nothing
+            if(!document.getElementById('view-home').classList.contains('hidden')) return;
+
+            // If current view is PATIENT, go HOME
+            if(!document.getElementById('view-patient').classList.contains('hidden')) {
                 window.navTo('view-home');
-            } else if (visibleView === 'view-add-patient') {
-                window.navTo('view-home');
-            } else if (visibleView === 'view-add-session' || visibleView === 'view-gallery') {
-                window.navTo('view-patient');
-            } else {
-                window.navTo('view-home');
+                return;
             }
+
+            // If current view is ADD PATIENT, go HOME
+            if(!document.getElementById('view-add-patient').classList.contains('hidden')) {
+                window.navTo('view-home');
+                return;
+            }
+
+            // If current view is GALLERY or ADD SESSION, go back to PATIENT
+            if(!document.getElementById('view-gallery').classList.contains('hidden') || 
+               !document.getElementById('view-add-session').classList.contains('hidden')) {
+                if(currentPatient) {
+                    window.navTo('view-patient');
+                } else {
+                    window.navTo('view-home');
+                }
+                return;
+            }
+            
+            // Fallback
+            window.navTo('view-home');
         };
         
         window.openProfile = (id) => {
@@ -445,14 +425,6 @@
             const res = await callGemini(`Analyze patient ${currentPatient.name}`);
             document.getElementById('analysis-content').innerHTML = res ? marked.parse(res) : 'Error';
         };
-        window.askGeminiProcedures = async () => {
-             const res = await callGemini('List 5 ortho procedures');
-             if(res) alert(res); 
-        };
-        window.askGeminiPlan = async () => {
-             const res = await callGemini('Suggest next plan');
-             if(res) document.getElementById('sess-next-plan').value = res;
-        };
 
         onAuthStateChanged(auth, (user) => {
             if(user) {
@@ -490,23 +462,33 @@
             document.getElementById('form-add-patient').reset();
         }
 
+        let allPats = [];
         function loadPatients() {
             if(!currentUser) return;
-            onSnapshot(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients'), orderBy('createdAt', 'desc')), (snap) => {
+            const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients'), orderBy('createdAt', 'desc'));
+            
+            onSnapshot(q, (snap) => {
                 allPats = []; 
                 snap.forEach(d => allPats.push({id: d.id, ...d.data()})); 
-                
-                // Update Count
                 document.getElementById('patient-count').innerText = allPats.length + " Patients";
-                
-                renderList(); // Render plain list
+                renderList(); 
+            }, (error) => {
+                console.error("Data Load Error:", error);
+                document.getElementById('patientsList').innerHTML = `<div class="text-center py-12 text-red-500"><p>Error loading data:</p><p class="text-xs text-slate-400 mt-2">${error.message}</p></div>`;
             });
         }
         
-        // Simple Render List (No Filter)
         function renderList() {
             const list = document.getElementById('patientsList'); list.innerHTML = '';
-            allPats.forEach(p => {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allPats.filter(p => p.name.toLowerCase().includes(search) || p.serialId.includes(search));
+            
+            if(filtered.length === 0) {
+                list.innerHTML = '<div class="text-center py-12 text-slate-400">No patients found.</div>';
+                return;
+            }
+
+            filtered.forEach(p => {
                 list.innerHTML += `
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center cursor-pointer group hover:bg-slate-50" onclick="openProfile('${p.id}')">
                     <div><h3 class="font-bold text-slate-800">${p.name}</h3><p class="text-xs text-slate-500">#${p.serialId}</p></div>
@@ -519,6 +501,7 @@
                 </div>`;
             });
         }
+        document.getElementById('searchInput').addEventListener('input', () => renderList());
 
         function loadMiniSessions(pid) {
             const el = document.getElementById('mini-sessions-list'); el.innerHTML = 'Loading...';
