@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orthodontic Clinic Manager (Pro)</title>
+    <title>Orthodontic Clinic Manager (Pro UI)</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
@@ -21,26 +18,72 @@
         .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #0d9488; width: 16px; height: 16px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Custom Grid for Dental Photos */
+        /* Dental Grid Layout - ENLARGED */
         .dental-cross-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
-            gap: 0.5rem;
-            max-width: 300px;
+            gap: 0.75rem;
+            max-width: 500px;
             margin: 0 auto;
         }
-        .dental-item { aspect-ratio: 1; border: 2px dashed #cbd5e1; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; background: #f8fafc; transition: all 0.2s; }
-        .dental-item:hover { border-color: #0d9488; background: #f0fdfa; }
-        .dental-item img { width: 100%; height: 100%; object-fit: cover; }
-        .dental-label { position: absolute; bottom: 2px; left: 0; right: 0; text-align: center; font-size: 9px; background: rgba(0,0,0,0.6); color: white; padding: 1px; }
         
-        /* Grid Positions */
-        .pos-top { grid-column: 2; grid-row: 1; }    /* Upper */
-        .pos-bottom { grid-column: 2; grid-row: 3; } /* Lower */
-        .pos-mid { grid-column: 2; grid-row: 2; }    /* Front */
-        .pos-left { grid-column: 1; grid-row: 2; }   /* Right Buccal (Patient Right is Viewer Left usually, or strictly screen Left) */
-        .pos-right { grid-column: 3; grid-row: 2; }  /* Left Buccal */
+        /* Photo Frame Styles */
+        .photo-frame {
+            position: relative;
+            border: 2px dashed #cbd5e1;
+            border-radius: 0.75rem;
+            background-color: #f1f5f9;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .photo-frame:hover { border-color: #0d9488; background-color: #e2e8f0; }
+        
+        .photo-content {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none; 
+            background-color: #000;
+        }
+        
+        .photo-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #94a3b8;
+            text-align: center;
+            padding: 0.5rem;
+        }
+        
+        .photo-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .photo-frame:hover .photo-content + .photo-overlay { opacity: 1; } 
+        
+        .ratio-portrait { aspect-ratio: 3/4; }
+        .ratio-landscape { aspect-ratio: 16/9; }
+        .ratio-square { aspect-ratio: 1/1; }
+
+        .pos-top { grid-column: 2; grid-row: 1; }
+        .pos-bottom { grid-column: 2; grid-row: 3; }
+        .pos-mid { grid-column: 2; grid-row: 2; }
+        .pos-left { grid-column: 1; grid-row: 2; }
+        .pos-right { grid-column: 3; grid-row: 2; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
@@ -56,7 +99,7 @@
                     <div class="bg-teal-600 text-white p-1.5 rounded-lg">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
-                    <h1 class="font-bold text-lg text-slate-800 tracking-tight">OrthoManager <span class="text-xs font-normal text-white bg-gradient-to-r from-indigo-500 to-purple-500 px-2 py-0.5 rounded-full ml-1 shadow-sm">Pro</span></h1>
+                    <h1 class="font-bold text-lg text-slate-800 tracking-tight">OrthoManager <span class="text-xs font-normal text-white bg-gradient-to-r from-indigo-500 to-purple-500 px-2 py-0.5 rounded-full ml-1 shadow-sm">Pro UI</span></h1>
                 </div>
             </div>
             <div id="authStatus" class="text-xs font-medium px-2 py-1 bg-slate-100 rounded text-slate-500">Waiting...</div>
@@ -79,224 +122,140 @@
                     <button onclick="filterList('outstanding')" class="filter-btn px-4 py-1.5 rounded-full text-sm font-medium bg-white text-slate-600 ring-1 ring-slate-200" data-filter="outstanding">Outstanding</button>
                 </div>
             </div>
-            
             <div id="patientsList" class="space-y-3">
                 <div class="text-center py-12 text-slate-400">
                     <p class="mb-2 text-3xl">🔒</p>
                     <p class="font-medium text-slate-600">Secure Login Required</p>
                 </div>
             </div>
-
             <button onclick="navTo('view-add-patient')" class="fixed bottom-6 right-6 bg-teal-600 hover:bg-teal-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition transform hover:scale-105 z-30">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             </button>
         </section>
 
-        <!-- PATIENT PROFILE VIEW -->
+        <!-- ADD PATIENT FORM -->
+        <section id="view-add-patient" class="hidden p-4 fade-enter pb-24">
+            <h2 class="text-xl font-bold text-slate-800 mb-6">New Patient File</h2>
+            <form id="form-add-patient" class="space-y-5">
+                <div class="flex gap-3">
+                    <div class="bg-slate-100 px-3 py-2 rounded-lg border border-slate-200 flex-1">
+                        <span class="text-xs text-slate-500 block">Serial ID</span>
+                        <span id="new-serial-id" class="font-mono font-bold text-slate-700">Loading...</span>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium mb-1 text-slate-600">Start Date</label>
+                        <div class="relative">
+                            <input type="date" id="inp-date" required class="w-full border-slate-300 rounded-lg shadow-sm p-2 text-sm">
+                            <button type="button" onclick="setTodayDate('inp-date')" class="absolute right-1 top-1 bottom-1 px-2 bg-slate-100 hover:bg-slate-200 text-xs rounded text-slate-600 font-bold">Today</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div><label class="text-xs text-slate-500">First Name</label><input type="text" id="inp-name-1" required class="w-full border-slate-300 rounded-lg p-2 text-sm"></div>
+                    <div><label class="text-xs text-slate-500">Middle Name</label><input type="text" id="inp-name-2" class="w-full border-slate-300 rounded-lg p-2 text-sm"></div>
+                    <div><label class="text-xs text-slate-500">Last Name</label><input type="text" id="inp-name-3" required class="w-full border-slate-300 rounded-lg p-2 text-sm"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="col-span-2"><label class="text-xs text-slate-500">Treatment Plan</label><textarea id="inp-treatment-plan" rows="2" class="w-full border-slate-300 rounded-lg p-2 text-sm"></textarea></div>
+                    <div><label class="text-xs text-slate-500">Cast ID</label><input type="text" id="inp-cast" class="w-full border-slate-300 rounded-lg p-2 text-sm"></div>
+                    <div><label class="text-xs text-slate-500">Type</label><select id="inp-type" class="w-full border-slate-300 rounded-lg p-2 text-sm bg-white"><option>New</option><option>Existing</option></select></div>
+                </div>
+
+                <hr class="border-slate-200 my-2">
+
+                <div>
+                    <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                        Extraoral & X-Rays
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <label class="photo-frame ratio-portrait group"><div class="photo-placeholder" id="ph-smile"><span class="text-2xl mb-1">😃</span><span class="text-xs font-bold">Smile</span></div><img id="img-smile" class="photo-content"><div class="photo-overlay">🔄 Replace</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'smile')"></label>
+                        <label class="photo-frame ratio-portrait group"><div class="photo-placeholder" id="ph-profile"><span class="text-2xl mb-1">👤</span><span class="text-xs font-bold">Profile</span></div><img id="img-profile" class="photo-content"><div class="photo-overlay">🔄 Replace</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'profile')"></label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <label class="photo-frame ratio-portrait group"><div class="photo-placeholder" id="ph-ceph"><span class="text-2xl mb-1">💀</span><span class="text-xs font-bold">Ceph</span></div><img id="img-ceph" class="photo-content"><div class="photo-overlay">🔄 Replace</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'ceph')"></label>
+                        <label class="photo-frame ratio-landscape group col-span-1 self-center"><div class="photo-placeholder" id="ph-pano"><span class="text-2xl mb-1">🦷</span><span class="text-xs font-bold">Panorama</span></div><img id="img-pano" class="photo-content"><div class="photo-overlay">🔄 Replace</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'pano')"></label>
+                    </div>
+
+                    <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Intraoral (Full View)
+                    </h3>
+                    <div class="dental-cross-grid">
+                        <label class="photo-frame ratio-square pos-top group"><div class="photo-placeholder" id="ph-uo"><span class="text-xs font-bold">Upper</span></div><img id="img-uo" class="photo-content"><div class="photo-overlay text-[10px]">🔄</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'uo')"></label>
+                        <label class="photo-frame ratio-square pos-left group"><div class="photo-placeholder" id="ph-rb"><span class="text-xs font-bold">Right</span></div><img id="img-rb" class="photo-content"><div class="photo-overlay text-[10px]">🔄</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'rb')"></label>
+                        <label class="photo-frame ratio-square pos-mid group"><div class="photo-placeholder" id="ph-fr"><span class="text-xs font-bold">Front</span></div><img id="img-fr" class="photo-content"><div class="photo-overlay text-[10px]">🔄</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'fr')"></label>
+                        <label class="photo-frame ratio-square pos-right group"><div class="photo-placeholder" id="ph-lb"><span class="text-xs font-bold">Left</span></div><img id="img-lb" class="photo-content"><div class="photo-overlay text-[10px]">🔄</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'lb')"></label>
+                        <label class="photo-frame ratio-square pos-bottom group"><div class="photo-placeholder" id="ph-lo"><span class="text-xs font-bold">Lower</span></div><img id="img-lo" class="photo-content"><div class="photo-overlay text-[10px]">🔄</div><input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 'lo')"></label>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit-patient" class="w-full bg-teal-600 text-white py-3 rounded-xl font-bold shadow-md mt-6">Create Patient File</button>
+            </form>
+        </section>
+
+        <!-- OTHER SECTIONS -->
         <section id="view-patient" class="hidden p-4 fade-enter pb-24">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-20 h-20 bg-teal-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
                 <div class="relative z-10">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h2 id="p-name" class="text-2xl font-bold text-slate-800">--</h2>
-                            <p class="text-sm text-slate-500 font-mono mt-1">ID: <span id="p-serial">#---</span></p>
-                        </div>
-                        <span id="p-type" class="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded uppercase">--</span>
-                    </div>
+                    <h2 id="p-name" class="text-2xl font-bold text-slate-800">--</h2>
+                    <p class="text-sm text-slate-500 font-mono">ID: <span id="p-serial">#---</span></p>
                     <div class="grid grid-cols-2 gap-4 mt-4 text-sm">
-                        <div><p class="text-slate-400 text-xs">Cast ID</p><p id="p-cast" class="font-semibold text-slate-700">--</p></div>
-                        <div><p class="text-slate-400 text-xs">Start Date</p><p id="p-date" class="font-semibold text-slate-700">--</p></div>
-                        <div><p class="text-slate-400 text-xs">Photos</p><p id="p-photos" class="font-semibold text-slate-700">0</p></div>
+                        <div><p class="text-slate-400 text-xs">Start Date</p><p id="p-date" class="font-semibold">--</p></div>
                         <div><p class="text-slate-400 text-xs">Balance</p><p id="p-balance" class="font-semibold text-red-600">$0</p></div>
                     </div>
                 </div>
             </div>
-
-            <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-xl mb-6 shadow-sm">
-                <h3 class="text-amber-800 font-bold text-sm uppercase tracking-wide mb-1 flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                    Treatment Plan
-                </h3>
-                <p id="p-treatment-plan" class="text-slate-700 font-medium text-sm">No plan recorded.</p>
-            </div>
             
-            <!-- PHOTOS PREVIEW (Summary) -->
+            <div class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-r-lg mb-4">
+                <p id="p-treatment-plan" class="text-slate-700 text-sm font-medium">No plan.</p>
+            </div>
+
             <div id="p-photos-preview" class="mb-6 hidden">
                 <h3 class="font-bold text-slate-800 text-sm mb-2 flex justify-between items-center">
                     <span>Initial Records</span>
                     <button onclick="openGallery()" class="text-teal-600 text-xs font-bold hover:underline">View All &rarr;</button>
                 </h3>
-                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2" id="p-photos-strip">
-                    <!-- Images injected here -->
-                </div>
+                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2" id="p-photos-strip"></div>
             </div>
 
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-lg text-slate-800">Sessions Log</h3>
+                <h3 class="font-bold text-lg text-slate-800">History</h3>
                 <div class="flex gap-2">
-                    <button onclick="analyzePatientHistory()" class="text-xs font-medium bg-gradient-to-r from-purple-100 to-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full flex items-center gap-1 hover:shadow-sm transition border border-indigo-200">
-                        <span id="btn-analyze-icon">✨</span> Analyze
-                    </button>
-                    <button onclick="openGallery()" class="text-xs font-medium bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-slate-200 transition">
-                        📸 More Images
-                    </button>
+                    <button onclick="analyzePatientHistory()" class="text-xs bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full border border-purple-200">✨ Analyze</button>
+                    <button onclick="openGallery()" class="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full border border-slate-200">📸 Gallery</button>
                 </div>
             </div>
-
-            <div id="mini-sessions-list" class="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-slate-200 before:z-0 pb-4">
-                <div class="text-center py-6 text-slate-400 pl-8">Loading history...</div>
-            </div>
-
-            <div class="fixed bottom-4 left-0 right-0 px-4 max-w-3xl mx-auto z-20">
-                <button onclick="navTo('view-add-session')" class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3.5 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition transform hover:scale-[1.01]">
-                    + Add New Session
-                </button>
-            </div>
+            <div id="mini-sessions-list" class="space-y-3 pb-4"></div>
+            <div class="fixed bottom-4 left-4 right-4 max-w-3xl mx-auto"><button onclick="navTo('view-add-session')" class="w-full bg-teal-600 text-white py-3 rounded-xl font-bold shadow-lg">+ Add Session</button></div>
         </section>
 
-        <!-- AI ANALYSIS MODAL -->
-        <div id="modal-analysis" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-4 fade-enter">
-            <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
-                <div class="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex justify-between items-center">
-                    <h3 class="font-bold flex items-center gap-2">✨ Gemini Analysis</h3>
-                    <button onclick="document.getElementById('modal-analysis').classList.add('hidden')" class="p-1 hover:bg-white/20 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                </div>
-                <div id="analysis-content" class="p-5 overflow-y-auto prose prose-sm text-slate-600 leading-relaxed"></div>
-            </div>
-        </div>
-
-        <!-- GALLERY VIEW -->
         <section id="view-gallery" class="hidden p-4 fade-enter pb-20">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-slate-800">Full Gallery</h2>
-                <button onclick="goBack()" class="text-sm text-slate-500">Close</button>
-            </div>
+            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-slate-800">Gallery</h2><button onclick="goBack()" class="text-sm text-slate-500">Close</button></div>
             <div id="gallery-grid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
-            <p id="gallery-empty" class="text-center text-slate-400 mt-10 hidden">No photos found.</p>
         </section>
 
-        <!-- ADD PATIENT FORM (Updated V8) -->
-        <section id="view-add-patient" class="hidden p-4 fade-enter pb-24">
-            <h2 class="text-xl font-bold text-slate-800 mb-6">Add New Patient</h2>
-            <form id="form-add-patient" class="space-y-4">
-                <div class="bg-slate-100 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
-                    <span class="text-sm text-slate-500">Auto Serial ID</span>
-                    <span id="new-serial-id" class="font-mono font-bold text-slate-700 text-lg">Loading...</span>
-                </div>
-
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="col-span-1"><label class="block text-xs font-medium mb-1 text-slate-600">First</label><input type="text" id="inp-name-1" required class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border text-sm"></div>
-                    <div class="col-span-1"><label class="block text-xs font-medium mb-1 text-slate-600">Middle</label><input type="text" id="inp-name-2" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border text-sm"></div>
-                    <div class="col-span-1"><label class="block text-xs font-medium mb-1 text-slate-600">Last</label><input type="text" id="inp-name-3" required class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border text-sm"></div>
-                </div>
-
-                <div><label class="block text-sm font-medium mb-1 text-slate-700">Treatment Plan</label><textarea id="inp-treatment-plan" rows="2" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></textarea></div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-sm font-medium mb-1">Cast ID</label><input type="text" id="inp-cast" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></div>
-                    <div><label class="block text-sm font-medium mb-1">Type</label><select id="inp-type" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border bg-white"><option>New</option><option>Existing</option></select></div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium mb-1">Start Date</label>
-                    <div class="flex gap-2">
-                        <input type="date" id="inp-date" required class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border">
-                        <button type="button" onclick="setTodayDate('inp-date')" class="px-4 py-2 bg-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-300 transition shadow-sm">Today</button>
-                    </div>
-                </div>
-                
-                <!-- V8: ADVANCED PHOTO UPLOAD -->
-                <div class="border-t border-slate-200 pt-4 mt-4">
-                    <h3 class="font-bold text-slate-800 mb-3">Extraoral & X-Rays</h3>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <!-- Smile & Profile -->
-                        <div class="border-2 border-dashed border-slate-300 rounded-xl p-2 text-center hover:bg-slate-50 cursor-pointer">
-                            <label class="cursor-pointer block">
-                                <span class="block text-xs font-bold text-slate-500">😃 Smile</span>
-                                <div id="prev-smile" class="h-20 flex items-center justify-center text-slate-300">+</div>
-                                <input type="file" accept="image/*" class="hidden" onchange="previewRec(this, 'prev-smile', 'smile')">
-                            </label>
-                        </div>
-                        <div class="border-2 border-dashed border-slate-300 rounded-xl p-2 text-center hover:bg-slate-50 cursor-pointer">
-                            <label class="cursor-pointer block">
-                                <span class="block text-xs font-bold text-slate-500">👤 Profile</span>
-                                <div id="prev-profile" class="h-20 flex items-center justify-center text-slate-300">+</div>
-                                <input type="file" accept="image/*" class="hidden" onchange="previewRec(this, 'prev-profile', 'profile')">
-                            </label>
-                        </div>
-                        <!-- X-Rays -->
-                        <div class="border-2 border-dashed border-slate-300 rounded-xl p-2 text-center hover:bg-slate-50 cursor-pointer">
-                            <label class="cursor-pointer block">
-                                <span class="block text-xs font-bold text-slate-500">💀 Ceph</span>
-                                <div id="prev-ceph" class="h-20 flex items-center justify-center text-slate-300">+</div>
-                                <input type="file" accept="image/*" class="hidden" onchange="previewRec(this, 'prev-ceph', 'ceph')">
-                            </label>
-                        </div>
-                        <div class="border-2 border-dashed border-slate-300 rounded-xl p-2 text-center hover:bg-slate-50 cursor-pointer">
-                            <label class="cursor-pointer block">
-                                <span class="block text-xs font-bold text-slate-500">🦷 Pano</span>
-                                <div id="prev-pano" class="h-20 flex items-center justify-center text-slate-300">+</div>
-                                <input type="file" accept="image/*" class="hidden" onchange="previewRec(this, 'prev-pano', 'pano')">
-                            </label>
-                        </div>
-                    </div>
-
-                    <h3 class="font-bold text-slate-800 mb-3">Intraoral (The Cross)</h3>
-                    <div class="dental-cross-grid">
-                        <!-- Top: Upper -->
-                        <div class="dental-item pos-top" onclick="triggerUpload('uo')">
-                            <div id="prev-uo" class="w-full h-full flex items-center justify-center text-slate-300 text-xs">Upper</div>
-                            <div class="dental-label">Upper Occ</div>
-                            <input type="file" id="file-uo" accept="image/*" class="hidden" onchange="previewRec(this, 'prev-uo', 'uo')">
-                        </div>
-                        <!-- Left: Right Buccal -->
-                        <div class="dental-item pos-left" onclick="triggerUpload('rb')">
-                            <div id="prev-rb" class="w-full h-full flex items-center justify-center text-slate-300 text-xs">Right</div>
-                            <div class="dental-label">Right</div>
-                            <input type="file" id="file-rb" accept="image/*" class="hidden" onchange="previewRec(this, 'prev-rb', 'rb')">
-                        </div>
-                        <!-- Mid: Frontal -->
-                        <div class="dental-item pos-mid" onclick="triggerUpload('fr')">
-                            <div id="prev-fr" class="w-full h-full flex items-center justify-center text-slate-300 text-xs">Front</div>
-                            <div class="dental-label">Frontal</div>
-                            <input type="file" id="file-fr" accept="image/*" class="hidden" onchange="previewRec(this, 'prev-fr', 'fr')">
-                        </div>
-                        <!-- Right: Left Buccal -->
-                        <div class="dental-item pos-right" onclick="triggerUpload('lb')">
-                            <div id="prev-lb" class="w-full h-full flex items-center justify-center text-slate-300 text-xs">Left</div>
-                            <div class="dental-label">Left</div>
-                            <input type="file" id="file-lb" accept="image/*" class="hidden" onchange="previewRec(this, 'prev-lb', 'lb')">
-                        </div>
-                        <!-- Bottom: Lower -->
-                        <div class="dental-item pos-bottom" onclick="triggerUpload('lo')">
-                            <div id="prev-lo" class="w-full h-full flex items-center justify-center text-slate-300 text-xs">Lower</div>
-                            <div class="dental-label">Lower Occ</div>
-                            <input type="file" id="file-lo" accept="image/*" class="hidden" onchange="previewRec(this, 'prev-lo', 'lo')">
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" id="btn-submit-patient" class="w-full bg-teal-600 text-white py-3 rounded-xl font-bold shadow-md mt-6 mb-10">Create File</button>
-            </form>
-        </section>
-
-        <!-- ADD SESSION FORM -->
         <section id="view-add-session" class="hidden p-4 fade-enter">
-            <h2 class="text-xl font-bold text-slate-800 mb-4">Log New Session</h2>
-            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6 flex justify-between items-center">
-                <div><p class="text-xs text-indigo-500 font-bold uppercase tracking-wider">Current Patient</p><h3 id="session-patient-name" class="text-lg font-bold text-indigo-900">--</h3></div>
-                <div class="bg-white px-3 py-1 rounded-lg text-sm font-mono text-indigo-600 shadow-sm border border-indigo-100" id="session-patient-id">#---</div>
-            </div>
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Log Session</h2>
+            <div class="bg-indigo-50 rounded-xl p-3 mb-4 border border-indigo-100"><h3 id="session-patient-name" class="font-bold text-indigo-900">--</h3></div>
             <form id="form-add-session" class="space-y-4">
-                <div><label class="block text-sm font-medium mb-1">Date</label><div class="flex gap-2"><input type="date" id="sess-date" required class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"><button type="button" onclick="setTodayDate('sess-date')" class="px-4 py-2 bg-slate-200 text-slate-700 text-sm font-medium rounded-lg">Today</button></div></div>
-                <div><div class="flex justify-between items-center mb-1"><label class="block text-sm font-medium">Procedure</label><button type="button" onclick="askGeminiProcedures()" class="text-xs flex items-center gap-1 text-teal-600 bg-teal-50 border border-teal-200 px-2 py-1 rounded-full"><span id="ai-icon-1">✨</span> AI Suggest</button></div><textarea id="sess-procedure" rows="2" placeholder="Details..." class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></textarea><div id="ai-suggestions" class="flex flex-wrap gap-2 mt-2 hidden"></div></div>
-                <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium mb-1">Payment</label><input type="number" id="sess-payment" min="0" value="0" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></div><div><label class="block text-sm font-medium mb-1">Balance</label><input type="number" id="sess-balance" class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></div></div>
-                <div><div class="flex justify-between items-center mb-1"><label class="block text-sm font-medium">Next Plan</label><button type="button" onclick="askGeminiPlan()" class="text-xs flex items-center gap-1 text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-full"><span id="ai-icon-2">🤖</span> AI Suggest</button></div><input type="text" id="sess-next-plan" placeholder="Plan..." class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border"></div>
-                <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center"><label class="cursor-pointer block"><span class="block text-sm font-medium text-slate-600 mb-1">📸 Add Photo</span><input type="file" id="sess-photo" accept="image/*" class="hidden" onchange="previewImage(this)"><div id="photo-preview" class="mx-auto h-24 w-24 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200"><span class="text-slate-300 text-2xl">+</span></div></label></div>
-                <button type="submit" id="btn-submit-session" class="w-full bg-teal-600 text-white py-3 rounded-xl font-bold shadow-md">Save Session</button>
+                <div><label class="block text-sm font-medium mb-1">Date</label><div class="flex gap-2"><input type="date" id="sess-date" class="w-full border rounded p-2"><button type="button" onclick="setTodayDate('sess-date')" class="px-3 bg-slate-200 rounded text-sm">Today</button></div></div>
+                <div><label class="block text-sm font-medium">Procedure</label><textarea id="sess-procedure" rows="2" class="w-full border rounded p-2"></textarea></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium">Payment</label><input type="number" id="sess-payment" value="0" class="w-full border rounded p-2"></div>
+                    <div><label class="block text-sm font-medium">Balance</label><input type="number" id="sess-balance" class="w-full border rounded p-2"></div>
+                </div>
+                <div><label class="block text-sm font-medium">Next Plan</label><input type="text" id="sess-next-plan" class="w-full border rounded p-2"></div>
+                <div class="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer relative"><input type="file" id="sess-photo" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="previewImage(this)"><div id="photo-preview" class="text-slate-400">+ Photo</div></div>
+                <button type="submit" id="btn-submit-session" class="w-full bg-teal-600 text-white py-3 rounded-xl font-bold shadow-md">Save</button>
             </form>
         </section>
+
+        <!-- AI MODAL -->
+        <div id="modal-analysis" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4"><div class="bg-white w-full max-w-lg rounded-xl p-4 max-h-[80vh] overflow-auto"><div class="flex justify-between mb-4"><h3 class="font-bold">Analysis</h3><button onclick="document.getElementById('modal-analysis').classList.add('hidden')">X</button></div><div id="analysis-content" class="prose prose-sm"></div></div></div>
+
     </main>
 
     <!-- LOGIC -->
@@ -324,16 +283,96 @@
         const appId = "my-clinic-v1"; 
 
         let currentUser = null, currentPatient = null, currentPatientId = null;
+        let newRecords = {}; 
+
+        // EXPOSE FUNCTIONS GLOBALLY (FIX FOR ReferenceError)
+        window.setTodayDate = (id) => document.getElementById(id).valueAsDate = new Date();
+        window.handlePhotoUpload = async (input, key) => {
+            if (input.files && input.files[0]) {
+                const b64 = await resizeImage(input.files[0]);
+                newRecords[key] = b64;
+                const imgEl = document.getElementById('img-'+key);
+                const phEl = document.getElementById('ph-'+key);
+                imgEl.src = b64;
+                imgEl.style.display = 'block';
+                phEl.style.display = 'none';
+            }
+        };
         
-        // New Records Object
-        let newRecords = {
-            smile: null, profile: null, ceph: null, pano: null,
-            uo: null, lo: null, fr: null, rb: null, lb: null
+        // Navigation needs to be global
+        const views = ['view-home', 'view-patient', 'view-gallery', 'view-add-patient', 'view-add-session'];
+        window.navTo = (id) => {
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            const btnBack = document.getElementById('btnBack');
+            if(id === 'view-home') { btnBack.classList.add('hidden'); currentPatient = null; } else btnBack.classList.remove('hidden');
+            if(id === 'view-add-patient') { generateSerial(); resetRecordsUI(); }
+            if(id === 'view-add-session') resetSessionForm();
+        };
+        window.goBack = () => window.navTo(currentPatient ? 'view-patient' : 'view-home');
+        window.openProfile = (id) => {
+            const p = allPats.find(x => x.id === id);
+            currentPatient = p; currentPatientId = id;
+            document.getElementById('p-name').innerText = p.name;
+            document.getElementById('p-serial').innerText = '#'+p.serialId;
+            document.getElementById('p-date').innerText = p.startDate;
+            document.getElementById('p-balance').innerText = '$'+p.balance;
+            document.getElementById('p-treatment-plan').innerText = p.treatmentPlan || "No plan.";
+            
+            const strip = document.getElementById('p-photos-strip');
+            const container = document.getElementById('p-photos-preview');
+            strip.innerHTML = '';
+            let hasRecs = false;
+            if(p.records) {
+                Object.keys(p.records).forEach(k => {
+                    if(p.records[k]) {
+                        hasRecs = true;
+                        strip.innerHTML += `<img src="${p.records[k]}" class="h-16 w-16 object-cover rounded-md border border-slate-200 shrink-0">`;
+                    }
+                });
+            }
+            if(hasRecs) container.classList.remove('hidden'); else container.classList.add('hidden');
+            loadMiniSessions(p.id); window.navTo('view-patient');
+        };
+        
+        // Additional global exposers
+        window.filterList = (type) => renderList(type);
+        window.openGallery = async () => {
+            window.navTo('view-gallery'); const grid = document.getElementById('gallery-grid'); grid.innerHTML = '';
+            if(currentPatient.records) {
+                const map = { smile:'Smile', profile:'Profile', ceph:'Ceph', pano:'Pano', uo:'Upper', lo:'Lower', fr:'Front', rb:'Right', lb:'Left' };
+                Object.keys(currentPatient.records).forEach(k => {
+                    if(currentPatient.records[k]) {
+                        grid.innerHTML += `<div class="aspect-square bg-slate-100 rounded overflow-hidden border relative"><img src="${currentPatient.records[k]}" class="w-full h-full object-cover"><div class="absolute bottom-0 w-full bg-black/60 text-white text-[10px] p-1">${map[k]}</div></div>`;
+                    }
+                });
+            }
+            const snap = await getDocs(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', currentPatientId, 'sessions'), orderBy('date', 'desc')));
+            snap.forEach(d => {
+                const s = d.data(); if(s.hasPhoto && s.photoData) {
+                    grid.innerHTML += `<div class="aspect-square bg-slate-100 rounded overflow-hidden border relative"><img src="${s.photoData}" class="w-full h-full object-cover"><div class="absolute bottom-0 w-full bg-black/50 text-white text-[10px] p-1">${s.date}</div></div>`;
+                }
+            });
+        };
+        window.previewImage = async (inp) => { if(inp.files[0]) { sessImg = await resizeImage(inp.files[0]); document.getElementById('photo-preview').innerHTML = 'IMG OK'; } };
+        window.analyzePatientHistory = async () => { 
+            if(!geminiApiKey) return alert("Add API Key");
+            const modal = document.getElementById('modal-analysis'); modal.classList.remove('hidden');
+            document.getElementById('analysis-content').innerHTML = 'Analyzing...';
+            const res = await callGemini(`Analyze patient ${currentPatient.name}`);
+            document.getElementById('analysis-content').innerHTML = res ? marked.parse(res) : 'Error';
+        };
+        window.askGeminiProcedures = async () => {
+             const res = await callGemini('List 5 ortho procedures');
+             // Note: In a real app, you'd render chips here. For simplicity in this fix, we alert.
+             if(res) alert(res); 
+        };
+        window.askGeminiPlan = async () => {
+             const res = await callGemini('Suggest next plan');
+             if(res) document.getElementById('sess-next-plan').value = res;
         };
 
-        window.setTodayDate = (id) => document.getElementById(id).valueAsDate = new Date();
-        window.triggerUpload = (id) => document.getElementById('file-'+id).click();
-
+        // Auth & Init
         onAuthStateChanged(auth, (user) => {
             if(user) {
                 currentUser = user;
@@ -341,12 +380,103 @@
                 document.getElementById('authStatus').className = "text-xs font-medium px-2 py-1 bg-green-100 rounded text-green-600";
                 loadPatients('all');
             } else {
-                const email = prompt("🔒 SECURE ACCESS\nPlease enter your clinic email:");
-                const password = prompt("Please enter your password:");
-                if(email && password) {
-                    signInWithEmailAndPassword(auth, email, password).catch(() => alert("Access Denied"));
-                }
+                const email = prompt("🔒 Login Email:");
+                const pass = prompt("Password:");
+                if(email && pass) signInWithEmailAndPassword(auth, email, pass).catch(() => alert("Error"));
             }
+        });
+
+        function resizeImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader(); reader.onload = (e) => {
+                    const img = new Image(); img.onload = () => {
+                        const canvas = document.createElement('canvas'); const maxDim = 800; let w = img.width, h = img.height;
+                        if(w > h) { if(w > maxDim) { h *= maxDim/w; w = maxDim; } } else { if(h > maxDim) { w *= maxDim/h; h = maxDim; } }
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h); resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    }; img.src = e.target.result;
+                }; reader.readAsDataURL(file);
+            });
+        }
+
+        function resetRecordsUI() {
+            newRecords = {};
+            const keys = ['smile','profile','ceph','pano','uo','lo','fr','rb','lb'];
+            keys.forEach(k => {
+                document.getElementById('img-'+k).style.display = 'none';
+                document.getElementById('ph-'+k).style.display = 'flex';
+            });
+            document.getElementById('form-add-patient').reset();
+        }
+
+        let allPats = [];
+        function loadPatients() {
+            if(!currentUser) return;
+            onSnapshot(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients'), orderBy('createdAt', 'desc')), (snap) => {
+                allPats = []; snap.forEach(d => allPats.push({id: d.id, ...d.data()})); renderList('all');
+            });
+        }
+        function renderList(type) {
+            const list = document.getElementById('patientsList'); list.innerHTML = '';
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allPats.filter(p => p.name.toLowerCase().includes(search) || p.serialId.includes(search));
+            filtered.forEach(p => {
+                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center cursor-pointer" onclick="openProfile('${p.id}')"><div><h3 class="font-bold text-slate-800">${p.name}</h3><p class="text-xs text-slate-500">#${p.serialId}</p></div><span class="text-xs bg-slate-100 px-2 py-1 rounded">View</span></div>`;
+            });
+        }
+        document.getElementById('searchInput').addEventListener('input', () => renderList('all'));
+
+        function loadMiniSessions(pid) {
+            const el = document.getElementById('mini-sessions-list'); el.innerHTML = 'Loading...';
+            onSnapshot(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', pid, 'sessions'), orderBy('date', 'desc')), (snap) => {
+                el.innerHTML = '';
+                snap.forEach(d => {
+                    const s = d.data();
+                    el.innerHTML += `<div class="relative z-10 ml-5 pl-8 pb-4"><div class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-teal-500 shadow"></div><div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm"><div class="flex justify-between mb-1"><span class="font-bold text-sm text-slate-800">${s.date}</span><span class="text-xs bg-slate-50 border px-2 py-0.5 rounded text-slate-500">Bal: $${s.balanceAfter}</span></div><p class="text-sm text-slate-600 font-medium">${s.procedure}</p></div></div>`;
+                });
+            });
+        }
+
+        function generateSerial() {
+            let max = 0; if(allPats.length) allPats.forEach(p => { const n = parseInt(p.serialId); if(!isNaN(n) && n > max) max = n; });
+            document.getElementById('new-serial-id').innerText = (max + 1).toString().padStart(3, '0');
+        }
+
+        document.getElementById('btn-submit-patient').addEventListener('click', async (e) => {
+            e.preventDefault(); if (!currentUser) return;
+            const n1 = document.getElementById('inp-name-1').value;
+            const n3 = document.getElementById('inp-name-3').value;
+            if(!n1 || !n3) return alert("Names required");
+            
+            const btn = e.target; btn.disabled = true; btn.innerText = 'Saving...';
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients'), {
+                    name: `${n1} ${document.getElementById('inp-name-2').value} ${n3}`,
+                    firstName: n1, lastName: n3,
+                    serialId: document.getElementById('new-serial-id').innerText,
+                    treatmentPlan: document.getElementById('inp-treatment-plan').value,
+                    castId: document.getElementById('inp-cast').value, type: document.getElementById('inp-type').value,
+                    startDate: document.getElementById('inp-date').value,
+                    records: newRecords,
+                    balance: 0, createdAt: serverTimestamp()
+                });
+                window.navTo('view-home');
+            } catch(e) { alert(e.message); } btn.disabled = false; btn.innerText = 'Create File';
+        });
+
+        let sessImg = null;
+        function resetSessionForm() { document.getElementById('form-add-session').reset(); document.getElementById('sess-date').valueAsDate = new Date(); sessImg = null; document.getElementById('photo-preview').innerHTML = '+'; }
+        
+        document.getElementById('btn-submit-session').addEventListener('click', async (e) => {
+            e.preventDefault(); if(!currentUser) return;
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', currentPatientId, 'sessions'), {
+                    date: document.getElementById('sess-date').value, procedure: document.getElementById('sess-procedure').value,
+                    payment: Number(document.getElementById('sess-payment').value), balanceAfter: document.getElementById('sess-balance').value,
+                    nextPlan: document.getElementById('sess-next-plan').value, hasPhoto: !!sessImg, photoData: sessImg, createdAt: serverTimestamp()
+                });
+                window.navTo('view-patient');
+            } catch(e) { console.log(e); }
         });
 
         async function callGemini(prompt) {
@@ -361,223 +491,6 @@
                 return data.candidates?.[0]?.content?.parts?.[0]?.text;
             } catch { return null; }
         }
-
-        // --- IMAGE HANDLING ---
-        function resizeImage(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader(); reader.onload = (e) => {
-                    const img = new Image(); img.onload = () => {
-                        const canvas = document.createElement('canvas'); const maxDim = 800; let w = img.width, h = img.height;
-                        if(w > h) { if(w > maxDim) { h *= maxDim/w; w = maxDim; } } else { if(h > maxDim) { w *= maxDim/h; h = maxDim; } }
-                        canvas.width = w; canvas.height = h;
-                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h); resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    }; img.src = e.target.result;
-                }; reader.readAsDataURL(file);
-            });
-        }
-
-        window.previewRec = async (inp, boxId, key) => {
-            if(inp.files[0]) {
-                document.getElementById(boxId).innerHTML = '...';
-                const b64 = await resizeImage(inp.files[0]);
-                newRecords[key] = b64;
-                document.getElementById(boxId).innerHTML = `<img src="${b64}">`;
-            }
-        };
-
-        // --- NAVIGATION ---
-        const views = ['view-home', 'view-patient', 'view-gallery', 'view-add-patient', 'view-add-session'];
-        window.navTo = (id) => {
-            views.forEach(v => document.getElementById(v).classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            const btnBack = document.getElementById('btnBack');
-            if(id === 'view-home') { btnBack.classList.add('hidden'); currentPatient = null; } else btnBack.classList.remove('hidden');
-            if(id === 'view-add-patient') { generateSerial(); resetRecords(); }
-            if(id === 'view-add-session') {
-                resetSessionForm();
-                if(currentPatient) {
-                    document.getElementById('session-patient-name').innerText = currentPatient.name;
-                    document.getElementById('session-patient-id').innerText = "#" + currentPatient.serialId;
-                }
-            }
-        };
-        window.goBack = () => {
-            const cur = views.find(v => !document.getElementById(v).classList.contains('hidden'));
-            if(cur.includes('add') || cur === 'view-patient') navTo('view-home'); else navTo('view-patient');
-        };
-
-        function resetRecords() {
-            newRecords = { smile: null, profile: null, ceph: null, pano: null, uo: null, lo: null, fr: null, rb: null, lb: null };
-            ['smile','profile','ceph','pano','uo','lo','fr','rb','lb'].forEach(k => {
-                const el = document.getElementById('prev-'+k);
-                if(el) el.innerHTML = k.length > 2 ? '+' : k.toUpperCase();
-            });
-            document.getElementById('form-add-patient').reset();
-        }
-
-        // --- DATA LOAD ---
-        let allPats = [];
-        function loadPatients() {
-            if(!currentUser) return;
-            onSnapshot(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients'), orderBy('createdAt', 'desc')), (snap) => {
-                allPats = []; snap.forEach(d => allPats.push({id: d.id, ...d.data()})); renderList('all');
-            });
-        }
-        window.filterList = (type) => renderList(type); // Simplified for brevity, logic is same
-        function renderList(type) {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const list = document.getElementById('patientsList'); list.innerHTML = '';
-            const filtered = allPats.filter(p => (p.name.toLowerCase().includes(search) || p.serialId.includes(search)));
-            filtered.forEach(p => {
-                const div = document.createElement('div');
-                div.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center hover:bg-slate-50 cursor-pointer";
-                div.onclick = () => openProfile(p);
-                div.innerHTML = `<div><h3 class="font-bold text-slate-800">${p.name}</h3><p class="text-xs text-slate-500">#${p.serialId}</p></div><div class="text-right"><span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-600">View</span></div>`;
-                list.appendChild(div);
-            });
-        }
-        document.getElementById('searchInput').addEventListener('input', () => renderList('all'));
-
-        function openProfile(p) {
-            currentPatient = p; currentPatientId = p.id;
-            document.getElementById('p-name').innerText = p.name; document.getElementById('p-serial').innerText = '#'+p.serialId;
-            document.getElementById('p-type').innerText = p.type; document.getElementById('p-cast').innerText = p.castId || '-';
-            document.getElementById('p-date').innerText = p.startDate; document.getElementById('p-photos').innerText = p.totalPhotos || 0;
-            document.getElementById('p-treatment-plan').innerText = p.treatmentPlan || "No plan.";
-            
-            // Show preview strip if records exist
-            const strip = document.getElementById('p-photos-strip');
-            const container = document.getElementById('p-photos-preview');
-            strip.innerHTML = '';
-            let hasRecs = false;
-            
-            // Check for new records structure
-            if(p.records) {
-                Object.keys(p.records).forEach(k => {
-                    if(p.records[k]) {
-                        hasRecs = true;
-                        strip.innerHTML += `<img src="${p.records[k]}" class="h-16 w-16 object-cover rounded-md border border-slate-200 shrink-0">`;
-                    }
-                });
-            }
-            // Check for legacy initPhoto/Xray
-            if(p.initPhoto) { hasRecs = true; strip.innerHTML += `<img src="${p.initPhoto}" class="h-16 w-16 object-cover rounded-md border">`; }
-            
-            if(hasRecs) container.classList.remove('hidden'); else container.classList.add('hidden');
-
-            loadMiniSessions(p.id); navTo('view-patient');
-        }
-
-        function loadMiniSessions(pid) {
-            const el = document.getElementById('mini-sessions-list'); el.innerHTML = '<div class="text-center py-4 text-slate-400">Loading...</div>';
-            onSnapshot(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', pid, 'sessions'), orderBy('date', 'desc')), (snap) => {
-                el.innerHTML = '';
-                snap.forEach(d => {
-                    const s = d.data();
-                    const div = document.createElement('div');
-                    div.className = "relative z-10 ml-5 pl-8 pb-4";
-                    div.innerHTML = `<div class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-teal-500 shadow"></div><div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm"><div class="flex justify-between mb-1"><span class="font-bold text-sm text-slate-800">${s.date}</span><span class="text-xs bg-slate-50 border px-2 py-0.5 rounded text-slate-500">Bal: $${s.balanceAfter}</span></div><p class="text-sm text-slate-600 font-medium">${s.procedure}</p></div>`;
-                    el.appendChild(div);
-                });
-            });
-        }
-
-        function generateSerial() {
-            let max = 0; if(allPats.length) allPats.forEach(p => { const n = parseInt(p.serialId); if(!isNaN(n) && n > max) max = n; });
-            document.getElementById('new-serial-id').innerText = (max + 1).toString().padStart(3, '0');
-        }
-
-        // --- SAVE PATIENT (V8) ---
-        document.getElementById('btn-submit-patient').addEventListener('click', async (e) => {
-            e.preventDefault(); if (!currentUser) return alert("Login first.");
-            
-            const n1 = document.getElementById('inp-name-1').value.trim();
-            const n2 = document.getElementById('inp-name-2').value.trim();
-            const n3 = document.getElementById('inp-name-3').value.trim();
-            const fullName = `${n1} ${n2} ${n3}`.replace(/\s+/g, ' ').trim();
-            
-            if(!n1 || !n3) return alert("Name required.");
-
-            const btn = e.target; btn.disabled = true; btn.innerText = 'Saving...';
-            try {
-                // Count photos
-                let photoCount = 0;
-                Object.values(newRecords).forEach(v => { if(v) photoCount++; });
-
-                await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients'), {
-                    name: fullName, firstName: n1, middleName: n2, lastName: n3,
-                    serialId: document.getElementById('new-serial-id').innerText,
-                    treatmentPlan: document.getElementById('inp-treatment-plan').value,
-                    castId: document.getElementById('inp-cast').value, 
-                    type: document.getElementById('inp-type').value,
-                    startDate: document.getElementById('inp-date').value, 
-                    records: newRecords, // Storing the 9 images map
-                    balance: 0, totalPhotos: photoCount, 
-                    nextPlan: 'Initial Consultation', createdAt: serverTimestamp()
-                }); 
-                navTo('view-home');
-            } catch(err) { alert('Error'); console.error(err); } btn.disabled = false; btn.innerText = 'Create File';
-        });
-
-        // --- GALLERY ---
-        window.openGallery = async () => {
-            navTo('view-gallery'); const grid = document.getElementById('gallery-grid'); grid.innerHTML = '';
-            
-            // 1. Show Initial Records
-            if(currentPatient.records) {
-                const map = { smile:'Smile', profile:'Profile', ceph:'Ceph', pano:'Pano', uo:'Upper', lo:'Lower', fr:'Front', rb:'Right', lb:'Left' };
-                Object.keys(currentPatient.records).forEach(k => {
-                    const url = currentPatient.records[k];
-                    if(url) {
-                        grid.innerHTML += `<div class="aspect-square bg-slate-100 rounded-lg overflow-hidden border relative"><img src="${url}" class="w-full h-full object-cover"><div class="absolute bottom-0 w-full bg-black/60 text-white text-[10px] p-1 truncate font-bold">${map[k] || k}</div></div>`;
-                    }
-                });
-            }
-            
-            // 2. Show Session Photos
-            const snap = await getDocs(query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', currentPatientId, 'sessions'), orderBy('date', 'desc')));
-            snap.forEach(d => { const s = d.data(); if(s.hasPhoto && s.photoData) { 
-                grid.innerHTML += `<div class="aspect-square bg-slate-100 rounded-lg overflow-hidden border relative"><img src="${s.photoData}" class="w-full h-full object-cover"><div class="absolute bottom-0 w-full bg-black/50 text-white text-[10px] p-1 truncate">${s.date}</div></div>`; 
-            }});
-            
-            if(grid.innerHTML === '') document.getElementById('gallery-empty').classList.remove('hidden');
-            else document.getElementById('gallery-empty').classList.add('hidden');
-        };
-
-        // Session logic same as before...
-        let sessImg = null;
-        function resetSessionForm() { document.getElementById('form-add-session').reset(); document.getElementById('sess-date').valueAsDate = new Date(); sessImg = null; document.getElementById('photo-preview').innerHTML = '+'; }
-        window.previewImage = async (inp) => { if(inp.files[0]) { sessImg = await resizeImage(inp.files[0]); document.getElementById('photo-preview').innerHTML = `<img src="${sessImg}">`; } };
-        document.getElementById('btn-submit-session').addEventListener('click', async (e) => {
-            e.preventDefault(); if(!currentUser) return;
-            const btn = e.target; btn.disabled = true;
-            try {
-                await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', currentPatientId, 'sessions'), {
-                    date: document.getElementById('sess-date').value, procedure: document.getElementById('sess-procedure').value,
-                    payment: Number(document.getElementById('sess-payment').value), balanceAfter: document.getElementById('sess-balance').value,
-                    nextPlan: document.getElementById('sess-next-plan').value, hasPhoto: !!sessImg, photoData: sessImg, createdAt: serverTimestamp()
-                });
-                navTo('view-patient');
-            } catch(e) { console.error(e); } btn.disabled = false;
-        });
-        
-        // AI logic calls
-        window.analyzePatientHistory = async () => {
-             // Same AI logic as before (abbreviated for space in this final block, but functionality persists)
-             const content = document.getElementById('analysis-content');
-             document.getElementById('modal-analysis').classList.remove('hidden');
-             content.innerHTML = 'Analyzing...';
-             const res = await callGemini(`Analyze patient ${currentPatient.name}`);
-             content.innerHTML = res ? marked.parse(res) : 'Error';
-        };
-        window.askGeminiProcedures = async () => {
-             const res = await callGemini('List 5 ortho procedures');
-             // ... existing logic to show chips ...
-        };
-        window.askGeminiPlan = async () => {
-             const res = await callGemini('Suggest next plan');
-             if(res) document.getElementById('sess-next-plan').value = res;
-        };
 
     </script>
 </body>
